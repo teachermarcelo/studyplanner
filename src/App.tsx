@@ -5,12 +5,13 @@
 
 import { HashRouter as Router, Routes, Route, Navigate, Link, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import {
-  Home,
-  BookOpen,
-  Brain,
-  BarChart3,
-  Trophy,
+import { 
+  Home, 
+  BookOpen, 
+  Brain, 
+  BarChart3, 
+  Trophy, 
+  Settings, 
   LogOut,
   Menu,
   X,
@@ -21,7 +22,7 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 
-// Pages
+// Lazy load pages
 import Dashboard from './pages/Dashboard';
 import Learn from './pages/Learn';
 import Practice from './pages/Practice';
@@ -51,6 +52,7 @@ function Sidebar() {
 
   return (
     <>
+      {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-zinc-200 flex items-center justify-between px-4 z-50">
         <h1 className="font-bold text-xl text-indigo-600">Fluent Immersion</h1>
         <button onClick={() => setIsOpen(!isOpen)} className="p-2 text-zinc-600">
@@ -58,6 +60,7 @@ function Sidebar() {
         </button>
       </div>
 
+      {/* Sidebar Overlay */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -70,6 +73,7 @@ function Sidebar() {
         )}
       </AnimatePresence>
 
+      {/* Sidebar Content */}
       <motion.aside
         className={cn(
           "fixed top-0 bottom-0 left-0 w-[240px] bg-white border-r border-[color:var(--border)] z-50 transform lg:translate-x-0 transition-transform duration-300 ease-in-out",
@@ -80,7 +84,7 @@ function Sidebar() {
           <h1 className="font-extrabold text-[20px] text-[color:var(--accent-primary)] hidden lg:block mb-10 flex items-center gap-2">
             FluentImmersion
           </h1>
-
+          
           <nav className="space-y-1">
             {navItems.map((item) => (
               <Link
@@ -104,20 +108,19 @@ function Sidebar() {
         <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-[color:var(--border)]">
           <div className="flex items-center gap-3 mb-6 p-2">
             <div className="w-10 h-10 rounded-full bg-zinc-200 shrink-0 overflow-hidden">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center font-bold text-zinc-500 uppercase">
-                  {profile?.full_name?.charAt(0) || '?'}
-                </div>
-              )}
+               {profile?.avatar_url ? (
+                  <img src={profile.avatar_url} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
+               ) : (
+                  <div className="w-full h-full flex items-center justify-center font-bold text-zinc-500 uppercase">
+                    {profile?.full_name?.charAt(0) || '?'}
+                  </div>
+               )}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-[14px] truncate">{profile?.full_name || 'Learning'}</p>
               <p className="text-[11px] text-[color:var(--text-muted)] truncate">{profile?.level} · {profile?.xp} XP</p>
             </div>
           </div>
-
           <button
             onClick={() => signOut()}
             className="flex items-center gap-3 w-full px-4 py-2 text-[color:var(--text-muted)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider"
@@ -133,30 +136,14 @@ function Sidebar() {
 
 function PrivateRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  return user ? <>{children}</> : <Navigate to="/auth" replace />;
-}
-
-function AuthRoute() {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
-  }
-
-  return user ? <Navigate to="/" replace /> : <Auth />;
+  
+  if (loading) return (
+    <div className="flex items-center justify-center h-screen">
+      <div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+  
+  return user ? <>{children}</> : <Navigate to="/auth" />;
 }
 
 export default function App() {
@@ -164,7 +151,7 @@ export default function App() {
     <Router>
       <AuthProvider>
         <Routes>
-          <Route path="/auth" element={<AuthRoute />} />
+          <Route path="/auth" element={<Auth />} />
           <Route
             path="/*"
             element={
@@ -180,7 +167,7 @@ export default function App() {
                       <Route path="/stats" element={<Statistics />} />
                       <Route path="/leaderboard" element={<Leaderboard />} />
                       <Route path="/admin" element={<AdminDashboard />} />
-                      <Route path="*" element={<Navigate to="/" replace />} />
+                      <Route path="*" element={<Navigate to="/" />} />
                     </Routes>
                   </main>
                 </div>
