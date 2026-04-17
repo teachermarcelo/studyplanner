@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { getActivitiesByLesson, getLessonsByLevel } from '../services/content';
-import { Activity, Lesson } from '../types';
+import { INITIAL_LESSONS } from '../services/content';
+import { Lesson } from '../types';
 import { supabase } from '../lib/supabase';
 import { motion } from 'motion/react';
 import {
@@ -13,8 +13,21 @@ import {
   Trophy,
   ListChecks,
 } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
 import { cn } from '../lib/utils';
+
+type ActivityContent = Record<string, any>;
+
+type Activity = {
+  id: string;
+  lesson_id: string;
+  order_index: number;
+  type: string;
+  title: string;
+  instruction?: string | null;
+  content?: ActivityContent | null;
+  xp: number;
+  is_required: boolean;
+};
 
 function renderActivityContent(activity: Activity) {
   const content = activity.content || {};
@@ -178,7 +191,16 @@ export default function Learn() {
       setLoadingLessons(true);
 
       try {
-        const fetchedLessons = await getLessonsByLevel(profile.level);
+        const { data: lessonsData } = await supabase
+          .from('lessons')
+          .select('*')
+          .eq('level', profile.level)
+          .order('day', { ascending: true });
+
+        const fetchedLessons = (lessonsData && lessonsData.length > 0)
+          ? (lessonsData as Lesson[])
+          : INITIAL_LESSONS.filter((lesson) => lesson.level === profile.level).sort((a, b) => a.day - b.day);
+
         setLessons(fetchedLessons);
 
         const { data: progressRows } = await supabase
@@ -187,7 +209,7 @@ export default function Learn() {
           .eq('user_id', profile.id);
 
         const progressMap: Record<string, boolean> = {};
-        progressRows?.forEach((row) => {
+        progressRows?.forEach((row: any) => {
           progressMap[row.lesson_id] = true;
         });
 
@@ -209,8 +231,13 @@ export default function Learn() {
       setLoadingActivities(true);
 
       try {
-        const fetchedActivities = await getActivitiesByLesson(selectedLesson.id);
-        setActivities(fetchedActivities);
+        const { data: activitiesData } = await supabase
+          .from('activities')
+          .select('*')
+          .eq('lesson_id', selectedLesson.id)
+          .order('order_index', { ascending: true });
+
+        setActivities((activitiesData || []) as Activity[]);
 
         const { data: activityRows } = await supabase
           .from('user_activity_progress')
@@ -220,7 +247,7 @@ export default function Learn() {
           .eq('status', 'completed');
 
         const completedMap: Record<string, boolean> = {};
-        activityRows?.forEach((row) => {
+        activityRows?.forEach((row: any) => {
           completedMap[row.activity_id] = true;
         });
 
@@ -415,13 +442,7 @@ export default function Learn() {
                         <p className="text-zinc-500 font-medium mb-4">{activity.instruction}</p>
                       )}
 
-                      <div className="prose prose-zinc max-w-none">
-                        {typeof activity.content === 'string' ? (
-                          <ReactMarkdown>{activity.content}</ReactMarkdown>
-                        ) : (
-                          renderActivityContent(activity)
-                        )}
-                      </div>
+                      <div className="prose prose-zinc max-w-none">{renderActivityContent(activity)}</div>
                     </div>
 
                     <div className="lg:w-[220px] shrink-0">
