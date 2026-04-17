@@ -1,7 +1,7 @@
 {
   "name": "Fluent Immersion Study Planner",
   "short_name": "Fluent",
-  "start_url": "/",
+  "start_url": "/studyplanner/",
   "display": "standalone",
   "background_color": "#ffffff",
   "theme_color": "#4f46e5",
