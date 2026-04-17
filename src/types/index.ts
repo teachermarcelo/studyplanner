@@ -1,4 +1,3 @@
-
 export interface UserProfile {
   id: string;
   email: string;
@@ -24,6 +23,36 @@ export interface Lesson {
   writing_prompt: string;
   video_url?: string;
   practice_quiz_id?: string;
+}
+
+export type ActivityType =
+  | 'warmup'
+  | 'vocabulary'
+  | 'pronunciation'
+  | 'grammar'
+  | 'reading'
+  | 'listening'
+  | 'speaking'
+  | 'matching'
+  | 'fill_blank'
+  | 'sentence_building'
+  | 'translation'
+  | 'quiz'
+  | 'writing'
+  | 'review'
+  | 'flashcard';
+
+export interface Activity {
+  id: string;
+  lesson_id: string;
+  order_index: number;
+  type: ActivityType;
+  title: string;
+  instruction?: string;
+  content: any;
+  xp: number;
+  is_required: boolean;
+  created_at?: string;
 }
 
 export interface Quiz {
