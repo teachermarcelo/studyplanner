@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+}
+
+@layer base {
+  :root {
+    --bg: #F8FAFC;
+    --card: #FFFFFF;
+    --accent-primary: #4F46E5;
+    --accent-secondary: #10B981;
+    --accent-warning: #F59E0B;
+    --text-main: #1E293B;
+    --text-muted: #64748B;
+    --border: #E2E8F0;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  }
+
+  body {
+    @apply bg-[color:var(--bg)] text-[color:var(--text-main)] font-sans antialiased;
+  }
+}
+
+@layer components {
+  .bento-card {
+    @apply bg-[color:var(--card)] border border-[color:var(--border)] rounded-[16px] p-6 shadow-[color:var(--shadow)] transition-all;
+  }
+
+  .bento-grid {
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 20px;
+  }
+
+  @media (min-width: 1024px) {
+    .bento-grid {
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: auto;
+    }
+  }
+
+  .span-2-2 { 
+    @apply lg:grid-cols-subgrid lg:col-span-2 lg:row-span-2; 
+  }
+  .span-2-1 { 
+    @apply lg:col-span-2; 
+  }
+  .span-1-2 { 
+    @apply lg:row-span-2; 
+  }
+
+  .card-title {
+    @apply text-[11px] font-bold text-[color:var(--text-muted)] uppercase tracking-widest mb-4;
+  }
+}
+
+.lesson-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+}
+
+.pwa-hide {
+  display: none;
+}
+
+@media (display-mode: standalone) {
+  .pwa-hide {
+    display: none;
+  }
+}
