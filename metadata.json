@@ -1,0 +1,14 @@
+{
+  "name": "Fluent Immersion - Study Planner",
+  "description": "A comprehensive 6-month English learning platform (A1 to B2) with daily challenges, gamification, AI chatbot practice, and admin management.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "AI Chatbot",
+    "Progress Tracking",
+    "Admin Dashboard",
+    "Gamification"
+  ]
+}
