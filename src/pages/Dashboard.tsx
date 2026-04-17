@@ -2,20 +2,22 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { motion } from 'motion/react';
-import { 
-  Zap, 
-  Flame, 
-  Target, 
-  ChevronRight, 
-  Play, 
+import {
+  Zap,
+  Flame,
+  Target,
+  ChevronRight,
+  Play,
   Award,
   Calendar,
   MessageCircle,
-  Clock
+  Clock,
+  Trophy
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Lesson, Progress } from '../types';
+import { cn } from '../lib/utils';
 
 export default function Dashboard() {
   const { profile } = useAuth();
