@@ -37,19 +37,28 @@ function renderActivityContent(activity: Activity) {
     case 'reading':
       return <p className="text-zinc-700 leading-relaxed">{content.text || 'Conteúdo não informado.'}</p>;
 
-    case 'vocabulary':
-      return (
-        <div className="flex flex-wrap gap-2">
-          {(content.words || []).map((word: string, index: number) => (
-            <span
-              key={index}
-              className="px-3 py-1 bg-indigo-50 text-indigo-600 rounded-full text-sm font-bold"
-            >
-              {word}
-            </span>
-          ))}
-        </div>
-      );
+   case 'vocabulary':
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      {(content.words || []).map((item: any, index: number) => {
+        const word = typeof item === 'string' ? item : item.word;
+        const translation = typeof item === 'string' ? '' : item.translation;
+        const example = typeof item === 'string' ? '' : item.example;
+
+        return (
+          <div key={index} className="bg-zinc-50 rounded-xl p-4">
+            <p className="font-bold text-zinc-900">{word}</p>
+            {translation && (
+              <p className="text-sm text-indigo-600 font-semibold mt-1">{translation}</p>
+            )}
+            {example && (
+              <p className="text-sm text-zinc-600 mt-2">{example}</p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
 
     case 'pronunciation':
       return (
