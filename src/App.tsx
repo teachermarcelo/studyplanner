@@ -8,14 +8,13 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import {
   Home,
   BookOpen,
-  Brain,
-  BarChart3,
+  RefreshCw,
+  Mic,
   Trophy,
   LogOut,
   Menu,
   X,
-  ShieldCheck,
-  MessageSquare
+  ShieldCheck
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -24,9 +23,8 @@ import { cn } from './lib/utils';
 // Pages
 import Dashboard from './pages/Dashboard';
 import Learn from './pages/Learn';
-import Practice from './pages/Practice';
-import AIClinic from './pages/AIClinic';
-import Statistics from './pages/Statistics';
+import Review from './pages/Review';
+import Speaking from './pages/Speaking';
 import Leaderboard from './pages/Leaderboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Auth from './pages/Auth';
@@ -37,11 +35,10 @@ function Sidebar() {
   const [isOpen, setIsOpen] = useState(false);
 
   const navItems = [
-    { icon: Home, label: 'Dashboard', path: '/' },
+    { icon: Home, label: 'Home', path: '/' },
     { icon: BookOpen, label: 'Learn', path: '/learn' },
-    { icon: Brain, label: 'Practice', path: '/practice' },
-    { icon: MessageSquare, label: 'AI Chat', path: '/ai-chat' },
-    { icon: BarChart3, label: 'Stats', path: '/stats' },
+    { icon: RefreshCw, label: 'Review', path: '/review' },
+    { icon: Mic, label: 'Speaking', path: '/speaking' },
     { icon: Trophy, label: 'Ranking', path: '/leaderboard' },
   ];
 
@@ -114,7 +111,9 @@ function Sidebar() {
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-bold text-[14px] truncate">{profile?.full_name || 'Learning'}</p>
-              <p className="text-[11px] text-[color:var(--text-muted)] truncate">{profile?.level} · {profile?.xp} XP</p>
+              <p className="text-[11px] text-[color:var(--text-muted)] truncate">
+                {profile?.level} · {profile?.xp} XP
+              </p>
             </div>
           </div>
 
@@ -175,9 +174,8 @@ export default function App() {
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/learn" element={<Learn />} />
-                      <Route path="/practice" element={<Practice />} />
-                      <Route path="/ai-chat" element={<AIClinic />} />
-                      <Route path="/stats" element={<Statistics />} />
+                      <Route path="/review" element={<Review />} />
+                      <Route path="/speaking" element={<Speaking />} />
                       <Route path="/leaderboard" element={<Leaderboard />} />
                       <Route path="/admin" element={<AdminDashboard />} />
                       <Route path="*" element={<Navigate to="/" replace />} />
