@@ -14,7 +14,8 @@ import {
   LogOut,
   Menu,
   X,
-  ShieldCheck
+  ShieldCheck,
+  AlertTriangle
 } from 'lucide-react';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -25,6 +26,7 @@ import Dashboard from './pages/Dashboard';
 import Learn from './pages/Learn';
 import Review from './pages/Review';
 import Speaking from './pages/Speaking';
+import Practice from './pages/Practice';
 import Leaderboard from './pages/Leaderboard';
 import AdminDashboard from './pages/AdminDashboard';
 import Auth from './pages/Auth';
@@ -38,6 +40,7 @@ function Sidebar() {
     { icon: Home, label: 'Home', path: '/' },
     { icon: BookOpen, label: 'Learn', path: '/learn' },
     { icon: RefreshCw, label: 'Review', path: '/review' },
+    { icon: AlertTriangle, label: 'Mistakes', path: '/practice' },
     { icon: Mic, label: 'Speaking', path: '/speaking' },
     { icon: Trophy, label: 'Ranking', path: '/leaderboard' },
   ];
@@ -175,6 +178,7 @@ export default function App() {
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/learn" element={<Learn />} />
                       <Route path="/review" element={<Review />} />
+                      <Route path="/practice" element={<Practice />} />
                       <Route path="/speaking" element={<Speaking />} />
                       <Route path="/leaderboard" element={<Leaderboard />} />
                       <Route path="/admin" element={<AdminDashboard />} />
