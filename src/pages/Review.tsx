@@ -208,20 +208,35 @@ export default function Review() {
                     </p>
                   </div>
 
-                  <div className="grid md:grid-cols-4 gap-3">
-                    <a href="/learn" className="rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 font-bold text-center">
-                      Learn
-                    </a>
-                    <button type="button" className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 font-bold text-zinc-700">
-                      Vocabulary
-                    </button>
-                    <button type="button" className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 font-bold text-zinc-700">
-                      Grammar
-                    </button>
-                    <a href="/speaking" className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 font-bold text-zinc-700 text-center">
-                      Speaking
-                    </a>
-                  </div>
+                 <div className="grid md:grid-cols-4 gap-3">
+  <a
+    href="#/learn"
+    className="rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 font-bold text-center"
+  >
+    Learn
+  </a>
+
+  <a
+    href="#/learn"
+    className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 font-bold text-zinc-700 text-center hover:border-indigo-300"
+  >
+    Vocabulary
+  </a>
+
+  <a
+    href="#/learn"
+    className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 font-bold text-zinc-700 text-center hover:border-indigo-300"
+  >
+    Grammar
+  </a>
+
+  <a
+    href="#/speaking"
+    className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 font-bold text-zinc-700 text-center hover:border-indigo-300"
+  >
+    Speaking
+  </a>
+</div>
                 </div>
               ) : (
                 <div className="text-zinc-500">Select a completed lesson to review it.</div>
