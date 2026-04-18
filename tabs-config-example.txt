@@ -1,0 +1,21 @@
+EXEMPLO DE MENU / TABS
+
+Use esta estrutura lógica na sua navegação:
+
+[
+  { label: 'Home', path: '/home' },
+  { label: 'Learn', path: '/learn' },
+  { label: 'Review', path: '/review' },
+  { label: 'Speaking', path: '/speaking' },
+  { label: 'Profile', path: '/profile' }
+]
+
+REMOVER:
+- AI Chat
+- Stats
+
+ADICIONAR:
+- Review
+- Speaking
+
+Se sua Home principal hoje estiver em "/" em vez de "/home", pode manter "/" sem problema.
