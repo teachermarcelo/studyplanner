@@ -1,5 +1,5 @@
-import LessonPlayerDemo from '../components/lesson-player/LessonPlayerDemo';
+import CefrLessonPlayerDemo from '../components/cefr-player/CefrLessonPlayerDemo';
 
 export default function Learn() {
-  return <LessonPlayerDemo />;
+  return <CefrLessonPlayerDemo />;
 }
