@@ -1,216 +1,327 @@
-
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import React, { useEffect, useMemo, useState } from 'react';
+import {
+  AlertTriangle,
+  BookOpen,
+  ChevronRight,
+  FileText,
+  GraduationCap,
+  Headphones,
+  Mic,
+  RefreshCw,
+  RotateCcw,
+  Search,
+  Target,
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { motion, AnimatePresence } from 'motion/react';
-import { Brain, Layers, Star, Play, Timer, CheckCircle, XCircle, RotateCcw, Plus } from 'lucide-react';
-import { Flashcard } from '../types';
-import { cn } from '../lib/utils';
+import { useAuth } from '../context/AuthContext';
+
+type Lesson = {
+  id: string;
+  day: number;
+  level: string;
+  title: string;
+  description?: string | null;
+  grammar_content?: string | null;
+  vocabulary?: string[] | null;
+  reading_prompt?: string | null;
+  writing_prompt?: string | null;
+};
+
+type ProgressRow = {
+  lesson_id: string;
+};
+
+function cls(...parts: Array<string | false | null | undefined>) {
+  return parts.filter(Boolean).join(' ');
+}
+
+function normalizeWords(words: string[] | null | undefined) {
+  return Array.isArray(words) ? words.filter(Boolean) : [];
+}
+
+function makeMistakeBuckets(lesson: Lesson) {
+  const vocab = normalizeWords(lesson.vocabulary);
+  return [
+    {
+      type: 'grammar',
+      icon: GraduationCap,
+      title: 'Grammar to revisit',
+      description: lesson.grammar_content || 'Review the main grammar point from this lesson.',
+      actionLabel: 'Review grammar',
+      color: 'bg-violet-50 text-violet-700 border-violet-200',
+    },
+    {
+      type: 'reading',
+      icon: FileText,
+      title: 'Reading to revisit',
+      description: lesson.reading_prompt || 'Read this lesson again and check the main ideas.',
+      actionLabel: 'Review reading',
+      color: 'bg-rose-50 text-rose-700 border-rose-200',
+    },
+    {
+      type: 'listening',
+      icon: Headphones,
+      title: 'Listening to revisit',
+      description: lesson.description || 'Replay the listening part and answer carefully again.',
+      actionLabel: 'Review listening',
+      color: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+    },
+    {
+      type: 'vocabulary',
+      icon: BookOpen,
+      title: 'Vocabulary to revisit',
+      description:
+        vocab.length > 0
+          ? `Focus on these words again: ${vocab.slice(0, 6).join(', ')}`
+          : 'Review the key words from this lesson.',
+      actionLabel: 'Review vocabulary',
+      color: 'bg-sky-50 text-sky-700 border-sky-200',
+    },
+    {
+      type: 'writing',
+      icon: Target,
+      title: 'Writing to revisit',
+      description: lesson.writing_prompt || 'Write again using the target structure from this lesson.',
+      actionLabel: 'Review writing',
+      color: 'bg-amber-50 text-amber-700 border-amber-200',
+    },
+    {
+      type: 'speaking',
+      icon: Mic,
+      title: 'Speaking to revisit',
+      description: 'Repeat the speaking prompt from this day and compare your answer with the model.',
+      actionLabel: 'Review speaking',
+      color: 'bg-fuchsia-50 text-fuchsia-700 border-fuchsia-200',
+    },
+  ];
+}
 
 export default function Practice() {
-  const { user } = useAuth();
-  const [view, setView] = useState<'menu' | 'flashcards' | 'quiz'>('menu');
-  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [flipped, setFlipped] = useState(false);
-  const [newCard, setNewCard] = useState({ front: '', back: '' });
-  const [showAddModal, setShowAddModal] = useState(false);
+  const { profile } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [query, setQuery] = useState('');
+  const [selectedType, setSelectedType] = useState<'all' | 'grammar' | 'reading' | 'listening' | 'vocabulary' | 'writing' | 'speaking'>('all');
 
   useEffect(() => {
-    if (view === 'flashcards' && user) {
-      fetchFlashcards();
+    async function loadMistakes() {
+      if (!profile?.id) return;
+
+      setLoading(true);
+      try {
+        const { data: progressData, error: progressError } = await supabase
+          .from('progress')
+          .select('lesson_id')
+          .eq('user_id', profile.id);
+
+        if (progressError) throw progressError;
+
+        const lessonIds = ((progressData || []) as ProgressRow[]).map((row) => row.lesson_id);
+
+        if (lessonIds.length === 0) {
+          setLessons([]);
+          return;
+        }
+
+        const { data: lessonsData, error: lessonsError } = await supabase
+          .from('lessons')
+          .select('id, day, level, title, description, grammar_content, vocabulary, reading_prompt, writing_prompt')
+          .in('id', lessonIds)
+          .order('day', { ascending: true });
+
+        if (lessonsError) throw lessonsError;
+
+        setLessons((lessonsData || []) as Lesson[]);
+      } catch (error) {
+        console.error('Erro ao carregar Mistakes:', error);
+      } finally {
+        setLoading(false);
+      }
     }
-  }, [view, user]);
 
-  const fetchFlashcards = async () => {
-    const { data } = await supabase
-      .from('flashcards')
-      .select('*')
-      .eq('user_id', user?.id)
-      .order('next_review', { ascending: true });
-    if (data) setFlashcards(data);
-  };
+    loadMistakes();
+  }, [profile?.id]);
 
-  const addFlashcard = async () => {
-    if (!newCard.front || !newCard.back || !user) return;
-    const { error } = await supabase.from('flashcards').insert([
-      { ...newCard, user_id: user.id }
-    ]);
-    if (!error) {
-      setNewCard({ front: '', back: '' });
-      setShowAddModal(false);
-      fetchFlashcards();
-    }
-  };
+  const cards = useMemo(() => {
+    const allCards = lessons.flatMap((lesson) =>
+      makeMistakeBuckets(lesson).map((bucket) => ({
+        lessonId: lesson.id,
+        lessonDay: lesson.day,
+        level: lesson.level,
+        lessonTitle: lesson.title,
+        lessonDescription: lesson.description || '',
+        ...bucket,
+      }))
+    );
 
-  const handleRate = async (difficulty: 'easy' | 'medium' | 'hard') => {
-    // Basic SRS logic simulation
-    setCurrentIndex(prev => prev + 1);
-    setFlipped(false);
-  };
+    return allCards.filter((card) => {
+      const matchesType = selectedType === 'all' || card.type === selectedType;
+      const joined = `${card.lessonTitle} ${card.lessonDescription} ${card.title} ${card.description}`.toLowerCase();
+      const matchesQuery = query.trim() === '' || joined.includes(query.toLowerCase());
+      return matchesType && matchesQuery;
+    });
+  }, [lessons, selectedType, query]);
 
-  if (view === 'flashcards') {
-    const card = flashcards[currentIndex];
+  const totals = useMemo(() => {
+    return {
+      lessons: lessons.length,
+      cards: cards.length,
+    };
+  }, [lessons, cards.length]);
 
+  if (loading) {
     return (
-      <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in duration-500">
-        <header className="flex items-center justify-between">
-          <button onClick={() => setView('menu')} className="text-zinc-500 font-bold hover:text-indigo-600 transition-colors">
-            ← Back
-          </button>
-          <div className="flex items-center gap-2">
-            <Layers className="text-indigo-600" size={20} />
-            <span className="font-bold">{currentIndex + 1} / {flashcards.length}</span>
-          </div>
-          <button onClick={() => setShowAddModal(true)} className="p-2 bg-indigo-100 text-indigo-600 rounded-lg hover:bg-indigo-200 transition-colors">
-            <Plus size={20} />
-          </button>
-        </header>
-
-        {flashcards.length > 0 ? (
-          currentIndex < flashcards.length ? (
-            <div className="perspective-1000">
-              <motion.div 
-                onClick={() => setFlipped(!flipped)}
-                animate={{ rotateY: flipped ? 180 : 0 }}
-                transition={{ type: 'spring', stiffness: 260, damping: 20 }}
-                className="relative w-full aspect-[4/3] cursor-pointer preserve-3d"
-              >
-                {/* Front */}
-                <div className="absolute inset-0 backface-hidden glass-card p-12 flex flex-col items-center justify-center text-center shadow-xl">
-                  <span className="text-sm font-bold text-indigo-600 uppercase tracking-widest mb-4">Front</span>
-                  <h2 className="text-4xl font-bold">{card.front}</h2>
-                  <p className="mt-8 text-zinc-400 text-sm">Click to flip</p>
-                </div>
-
-                {/* Back */}
-                <div className="absolute inset-0 backface-hidden glass-card p-12 flex flex-col items-center justify-center text-center shadow-xl [transform:rotateY(180deg)] bg-indigo-600 text-white border-none">
-                  <span className="text-sm font-bold text-white/60 uppercase tracking-widest mb-4">Back</span>
-                  <h2 className="text-4xl font-bold">{card.back}</h2>
-                  <p className="mt-8 text-white/50 text-sm">How was it?</p>
-                </div>
-              </motion.div>
-
-              <AnimatePresence>
-                {flipped && (
-                  <motion.div 
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="grid grid-cols-3 gap-4 mt-8"
-                  >
-                    <button onClick={() => handleRate('hard')} className="bg-red-100 text-red-600 py-4 rounded-2xl font-bold hover:bg-red-200 transition-colors">Hard</button>
-                    <button onClick={() => handleRate('medium')} className="bg-zinc-100 text-zinc-600 py-4 rounded-2xl font-bold hover:bg-zinc-200 transition-colors">Good</button>
-                    <button onClick={() => handleRate('easy')} className="bg-green-100 text-green-600 py-4 rounded-2xl font-bold hover:bg-green-200 transition-colors">Easy</button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          ) : (
-            <div className="glass-card p-12 text-center space-y-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center text-green-600 mx-auto">
-                <CheckCircle size={32} />
-              </div>
-              <h2 className="text-2xl font-bold">Session Complete!</h2>
-              <p className="text-zinc-500">You've reviewed all your pending cards. Good job!</p>
-              <button onClick={() => setView('menu')} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg shadow-indigo-200">
-                Finish
-              </button>
-            </div>
-          )
-        ) : (
-          <div className="glass-card p-12 text-center space-y-6">
-             <div className="w-16 h-16 bg-zinc-100 rounded-full flex items-center justify-center text-zinc-400 mx-auto">
-                <Layers size={32} />
-              </div>
-              <h2 className="text-2xl font-bold">No Cards Yet</h2>
-              <p className="text-zinc-500">Start adding vocabulary from your lessons to practice here.</p>
-              <button onClick={() => setShowAddModal(true)} className="bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold">
-                Add Your First Card
-              </button>
-          </div>
-        )}
-
-        {/* Add Modal Placeholder */}
-        {showAddModal && (
-          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-             <div className="bg-white rounded-3xl p-8 w-full max-w-md space-y-4">
-                <h3 className="text-xl font-bold">New Flashcard</h3>
-                <div className="space-y-4">
-                  <input 
-                    type="text" 
-                    placeholder="Front (English)" 
-                    className="w-full p-4 bg-zinc-100 rounded-xl font-medium outline-none focus:ring-2 focus:ring-indigo-600"
-                    value={newCard.front}
-                    onChange={e => setNewCard({...newCard, front: e.target.value})}
-                  />
-                  <input 
-                    type="text" 
-                    placeholder="Back (Translation/Meaning)" 
-                    className="w-full p-4 bg-zinc-100 rounded-xl font-medium outline-none focus:ring-2 focus:ring-indigo-600"
-                    value={newCard.back}
-                    onChange={e => setNewCard({...newCard, back: e.target.value})}
-                  />
-                </div>
-                <div className="flex gap-4 pt-4">
-                   <button onClick={() => setShowAddModal(false)} className="flex-1 py-3 font-bold text-zinc-500 hover:bg-zinc-50 rounded-xl transition-colors">Cancel</button>
-                   <button onClick={addFlashcard} className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors">Save</button>
-                </div>
-             </div>
-          </div>
-        )}
+      <div className="min-h-screen bg-[#f6f7fb] p-5">
+        <div className="max-w-6xl mx-auto rounded-[28px] bg-white border border-zinc-200 shadow-sm p-8 text-zinc-500 font-medium">
+          Loading mistakes...
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12">
-      <header className="text-center">
-        <h1 className="text-4xl font-black mb-2 tracking-tight">Practice Lab</h1>
-        <p className="text-zinc-500 font-medium">Strengthen your memory and perfect your skills.</p>
-      </header>
+    <div className="min-h-screen bg-[#f6f7fb] p-3 md:p-5">
+      <div className="max-w-6xl mx-auto space-y-4">
+        <div className="rounded-[28px] bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 text-white shadow-sm p-6 md:p-8">
+          <p className="text-xs uppercase tracking-[0.25em] font-bold text-white/70">Mistakes</p>
+          <h1 className="text-3xl md:text-4xl font-black mt-2">Review what needs reinforcement</h1>
+          <p className="mt-3 text-white/85 max-w-2xl">
+            This page replaces Practice with something more useful: revisit the parts of completed lessons
+            that the learner should strengthen again.
+          </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        <motion.div 
-          whileHover={{ y: -5 }}
-          onClick={() => setView('flashcards')}
-          className="glass-card p-8 cursor-pointer group space-y-6"
-        >
-          <div className="w-16 h-16 bg-indigo-100 rounded-2xl flex items-center justify-center text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-300">
-             <Layers size={32} />
-          </div>
-          <div>
-            <h3 className="text-2xl font-bold mb-2">Smart Flashcards</h3>
-            <p className="text-zinc-500">Spaced repetition system to help you memorize vocabulary forever.</p>
-          </div>
-          <div className="flex items-center gap-2 text-indigo-600 font-bold">
-            Practice now <ArrowRight size={18} className="" />
-          </div >
-        </motion.div>
+          <div className="mt-6 grid md:grid-cols-3 gap-4">
+            <div className="rounded-3xl bg-white/10 border border-white/15 p-5">
+              <div className="inline-flex items-center gap-2 font-bold">
+                <AlertTriangle size={18} />
+                Review cards
+              </div>
+              <p className="text-3xl font-black mt-3">{cards.length}</p>
+              <p className="text-white/75 mt-2">Filtered items ready to revisit</p>
+            </div>
 
-        <motion.div 
-          whileHover={{ y: -5 }}
-          className="glass-card p-8 opacity-60 grayscale cursor-not-allowed group space-y-6"
-        >
-          <div className="w-16 h-16 bg-orange-100 rounded-2xl flex items-center justify-center text-orange-600">
-             <Timer size={32} />
+            <div className="rounded-3xl bg-white/10 border border-white/15 p-5">
+              <div className="inline-flex items-center gap-2 font-bold">
+                <RotateCcw size={18} />
+                Completed lessons
+              </div>
+              <p className="text-3xl font-black mt-3">{totals.lessons}</p>
+              <p className="text-white/75 mt-2">Each completed lesson generates review targets</p>
+            </div>
+
+            <div className="rounded-3xl bg-white/10 border border-white/15 p-5">
+              <div className="inline-flex items-center gap-2 font-bold">
+                <RefreshCw size={18} />
+                Best use
+              </div>
+              <p className="text-lg font-black mt-3">Learn → Mistakes → Speaking</p>
+              <p className="text-white/75 mt-2">This loop is much stronger than a generic practice page.</p>
+            </div>
           </div>
-          <div>
-            <h3 className="text-2xl font-bold mb-2">Speed Quiz</h3>
-            <p className="text-zinc-500">Challenge yourself under pressure. Coming soon to all levels!</p>
+        </div>
+
+        <div className="rounded-[28px] bg-white border border-zinc-200 shadow-sm p-5 md:p-6">
+          <div className="grid lg:grid-cols-[1fr_auto] gap-4">
+            <div className="relative">
+              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400" />
+              <input
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Search by lesson, skill, or topic..."
+                className="w-full rounded-2xl border border-zinc-200 bg-white pl-11 pr-4 py-3 outline-none focus:border-indigo-500"
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {[
+                ['all', 'All'],
+                ['grammar', 'Grammar'],
+                ['reading', 'Reading'],
+                ['listening', 'Listening'],
+                ['vocabulary', 'Vocabulary'],
+                ['writing', 'Writing'],
+                ['speaking', 'Speaking'],
+              ].map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setSelectedType(value as any)}
+                  className={cls(
+                    'rounded-2xl px-4 py-3 font-bold border transition-all',
+                    selectedType === value
+                      ? 'bg-indigo-600 text-white border-indigo-600'
+                      : 'bg-white text-zinc-700 border-zinc-200 hover:border-indigo-300'
+                  )}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
-          <div className="flex items-center gap-2 text-orange-600 font-bold">
-            Locked <Lock size={18} className="" />
+        </div>
+
+        {lessons.length === 0 ? (
+          <div className="rounded-[28px] bg-white border border-zinc-200 shadow-sm p-8">
+            <h2 className="text-2xl font-black text-zinc-900">Nothing to reinforce yet</h2>
+            <p className="text-zinc-500 mt-3">
+              Complete at least one lesson in Learn first. Then Mistakes becomes useful right away.
+            </p>
+            <a
+              href="#/learn"
+              className="mt-6 inline-flex rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-3 font-bold"
+            >
+              Go to Learn
+            </a>
           </div>
-        </motion.div>
+        ) : (
+          <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+            {cards.map((card, index) => {
+              const Icon = card.icon;
+              return (
+                <div key={`${card.lessonId}-${card.type}-${index}`} className="rounded-[28px] bg-white border border-zinc-200 shadow-sm p-5">
+                  <div className={cls('inline-flex items-center gap-2 px-3 py-2 rounded-full border text-sm font-bold', card.color)}>
+                    <Icon size={16} />
+                    {card.type}
+                  </div>
+
+                  <p className="text-xs uppercase tracking-[0.2em] font-bold text-zinc-400 mt-4">
+                    {card.level} · Day {card.lessonDay}
+                  </p>
+                  <h3 className="text-xl font-black text-zinc-900 mt-2">{card.lessonTitle}</h3>
+                  <p className="text-sm font-bold text-zinc-500 mt-2">{card.title}</p>
+                  <p className="text-zinc-600 leading-7 mt-3">{card.description}</p>
+
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <a
+                      href="#/review"
+                      className="rounded-2xl bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 font-bold inline-flex items-center gap-2"
+                    >
+                      {card.actionLabel}
+                      <ChevronRight size={16} />
+                    </a>
+
+                    {card.type === 'speaking' ? (
+                      <a
+                        href="#/speaking"
+                        className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 font-bold text-zinc-700"
+                      >
+                        Open Speaking
+                      </a>
+                    ) : (
+                      <a
+                        href="#/learn"
+                        className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 font-bold text-zinc-700"
+                      >
+                        Open Learn
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );
-}
-
-function ArrowRight({ size, className }: { size: number, className: string }) {
-  return <Play size={size} className={cn("fill-current", className)} />;
-}
-
-function Lock({ size, className }: { size: number, className: string }) {
-  return <XCircle size={size} className={className} />;
 }
