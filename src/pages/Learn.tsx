@@ -23,11 +23,11 @@ type DbLesson = {
   level: Level;
   day: number;
   title: string;
-  description: string | null;
-  grammar_content: string | null;
-  vocabulary: string[] | null;
-  reading_prompt: string | null;
-  writing_prompt: string | null;
+  description?: string | null;
+  grammar_content?: string | null;
+  vocabulary?: string[] | null;
+  reading_prompt?: string | null;
+  writing_prompt?: string | null;
 };
 
 type DbActivity = {
@@ -36,8 +36,8 @@ type DbActivity = {
   order_index: number;
   type: string;
   title: string;
-  instruction: string | null;
-  content: any;
+  instruction?: string | null;
+  content?: any;
   xp: number;
   is_required: boolean;
 };
@@ -62,8 +62,6 @@ type SpeakingTask = {
   targetSentence: string;
   keywords: string[];
 };
-
-type StepType = 'grammar' | 'reading' | 'listening' | 'speaking' | 'writing' | 'celebration';
 
 type LessonStep =
   | {
@@ -143,16 +141,62 @@ function cls(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(' ');
 }
 
-function normalizeQuestion(input: any, fallbackExplanation?: string): Question {
+function safeString(value: any, fallback = ''): string {
+  if (typeof value === 'string') return value;
+  if (value === null || value === undefined) return fallback;
+  return String(value);
+}
+
+function safeStringArray(value: any, fallback: string[] = []): string[] {
+  return Array.isArray(value) ? value.map((x) => safeString(x)).filter(Boolean) : fallback;
+}
+
+function normalizeQuestion(input: any, fallbackQuestion = 'Choose the correct option.'): Question {
   return {
-    question: String(input?.question || 'Choose the correct option.'),
-    options: Array.isArray(input?.options) ? input.options.map((x: any) => String(x)) : ['Option A', 'Option B', 'Option C'],
-    correct: typeof input?.correct === 'number' ? input.correct : typeof input?.correct_option === 'number' ? input.correct_option : 0,
-    explanation: input?.explanation ? String(input.explanation) : fallbackExplanation,
+    question: safeString(input?.question, fallbackQuestion),
+    options: Array.isArray(input?.options)
+      ? input.options.map((x: any) => safeString(x))
+      : ['Option A', 'Option B', 'Option C'],
+    correct:
+      typeof input?.correct === 'number'
+        ? input.correct
+        : typeof input?.correct_option === 'number'
+        ? input.correct_option
+        : 0,
+    explanation: safeString(input?.explanation, ''),
   };
 }
 
-function mapActivitiesToSteps(lesson: DbLesson, activities: DbActivity[]): LessonStep[] {
+function fallbackReadingQuestions(text: string): Question[] {
+  return [
+    {
+      question: 'What is the main topic of the text?',
+      options: ['Personal introduction', 'A weather report', 'A shopping list'],
+      correct: 0,
+      explanation: 'This lesson text is about basic personal information.',
+    },
+    {
+      question: 'Which detail is mentioned?',
+      options: ['Name or origin', 'Train schedules', 'Mathematics formulas'],
+      correct: 0,
+      explanation: 'The text includes simple personal details.',
+    },
+    {
+      question: 'What skill are you practicing here?',
+      options: ['Reading', 'Cooking', 'Driving'],
+      correct: 0,
+      explanation: 'This is the reading step of the lesson.',
+    },
+    {
+      question: 'What should you do after reading?',
+      options: ['Answer the questions', 'Close the lesson immediately', 'Skip the activity'],
+      correct: 0,
+      explanation: 'The goal is to understand the text and answer the questions.',
+    },
+  ];
+}
+
+function buildSafeSteps(lesson: DbLesson, activities: DbActivity[]): LessonStep[] {
   const getByType = (type: string) => activities.find((a) => a.type === type);
 
   const grammarActivity = getByType('grammar');
@@ -162,80 +206,110 @@ function mapActivitiesToSteps(lesson: DbLesson, activities: DbActivity[]): Lesso
   const writingActivity = getByType('writing');
   const quizActivity = getByType('quiz');
 
-  const grammarContent = grammarActivity?.content || {};
-  const readingContent = readingActivity?.content || {};
-  const listeningContent = listeningActivity?.content || {};
-  const speakingContent = speakingActivity?.content || {};
-  const writingContent = writingActivity?.content || {};
+  const grammarContent = grammarActivity?.content && typeof grammarActivity.content === 'object' ? grammarActivity.content : {};
+  const readingContent = readingActivity?.content && typeof readingActivity.content === 'object' ? readingActivity.content : {};
+  const listeningContent = listeningActivity?.content && typeof listeningActivity.content === 'object' ? listeningActivity.content : {};
+  const speakingContent = speakingActivity?.content && typeof speakingActivity.content === 'object' ? speakingActivity.content : {};
+  const writingContent = writingActivity?.content && typeof writingActivity.content === 'object' ? writingActivity.content : {};
   const quizQuestions = Array.isArray(quizActivity?.content?.questions) ? quizActivity?.content?.questions : [];
+
+  const grammarQuestion = normalizeQuestion(quizQuestions[0], 'Choose the best grammar option.');
 
   const grammarStep: LessonStep = {
     id: `${lesson.id}-grammar`,
     type: 'grammar',
-    title: grammarActivity?.title || 'Grammar Focus',
+    title: safeString(grammarActivity?.title, 'Grammar Focus'),
     subtitle: 'Learn the rule',
-    explanation: String(grammarContent?.topic || lesson.grammar_content || 'Study the grammar point for this lesson.'),
-    examples: Array.isArray(grammarContent?.examples)
-      ? grammarContent.examples.map((x: any) => String(x))
-      : [lesson.reading_prompt || 'Example 1.', lesson.writing_prompt || 'Example 2.'].filter(Boolean) as string[],
-    question: normalizeQuestion(quizQuestions[0], 'Read the rule and choose the best answer.'),
-    xp: grammarActivity?.xp || 15,
+    explanation: safeString(grammarContent?.topic || lesson.grammar_content, 'Study the grammar point for this lesson.'),
+    examples: safeStringArray(grammarContent?.examples, [
+      safeString(lesson.reading_prompt, 'Example 1.'),
+      safeString(lesson.writing_prompt, 'Example 2.'),
+    ]).slice(0, 3),
+    question: grammarQuestion,
+    xp: typeof grammarActivity?.xp === 'number' ? grammarActivity.xp : 15,
   };
+
+  const readingText = safeString(readingContent?.text || lesson.reading_prompt, 'Read the passage and answer the questions.');
+  const rawReadingQuestions = Array.isArray(readingContent?.questions)
+    ? readingContent.questions
+    : Array.isArray(quizQuestions)
+    ? quizQuestions
+    : [];
+  const readingQuestions = (rawReadingQuestions.length > 0
+    ? rawReadingQuestions.map((q: any) => normalizeQuestion(q))
+    : fallbackReadingQuestions(readingText)
+  ).slice(0, 4);
 
   const readingStep: LessonStep = {
     id: `${lesson.id}-reading`,
     type: 'reading',
-    title: readingActivity?.title || 'Reading',
+    title: safeString(readingActivity?.title, 'Reading'),
     subtitle: 'Read and answer',
-    text: String(readingContent?.text || lesson.reading_prompt || 'Read the passage and answer the questions.'),
-    questions: (Array.isArray(readingContent?.questions) ? readingContent.questions : quizQuestions)
-      .slice(0, 4)
-      .map((q: any) => normalizeQuestion(q)),
-    xp: readingActivity?.xp || 10,
+    text: readingText,
+    questions: readingQuestions,
+    xp: typeof readingActivity?.xp === 'number' ? readingActivity.xp : 10,
   };
 
-  const listenSource = String(listeningContent?.audio_text || listeningContent?.script || listeningContent?.task || lesson.reading_prompt || 'Listen carefully.');
-  const listeningExercises: ListeningExercise[] = (
-    Array.isArray(listeningContent?.questions) ? listeningContent.questions : quizQuestions
+  const listeningSource = safeString(
+    listeningContent?.audio_text || listeningContent?.script || listeningContent?.task || lesson.reading_prompt,
+    'Listen carefully and choose the best answer.'
+  );
+
+  const rawListeningQuestions = Array.isArray(listeningContent?.questions)
+    ? listeningContent.questions
+    : Array.isArray(quizQuestions)
+    ? quizQuestions
+    : [];
+
+  const listeningExercises: ListeningExercise[] = (rawListeningQuestions.length > 0
+    ? rawListeningQuestions
+    : [
+        { question: 'Choose the correct answer.', options: ['Option A', 'Option B', 'Option C'], correct: 0 },
+        { question: 'Choose the correct answer.', options: ['Option A', 'Option B', 'Option C'], correct: 0 },
+        { question: 'Choose the correct answer.', options: ['Option A', 'Option B', 'Option C'], correct: 0 },
+      ]
   )
     .slice(0, 3)
     .map((q: any) => ({
-      audioText: listenSource,
-      transcription: String(listeningContent?.transcription || listenSource),
-      question: String(q?.question || 'Choose the correct answer.'),
-      options: Array.isArray(q?.options) ? q.options.map((x: any) => String(x)) : ['Option A', 'Option B', 'Option C'],
+      audioText: listeningSource,
+      transcription: safeString(listeningContent?.transcription || listeningSource, listeningSource),
+      question: safeString(q?.question, 'Choose the correct answer.'),
+      options: Array.isArray(q?.options) ? q.options.map((x: any) => safeString(x)) : ['Option A', 'Option B', 'Option C'],
       correct: typeof q?.correct === 'number' ? q.correct : 0,
     }));
 
-  if (listeningExercises.length === 0) {
-    listeningExercises.push({
-      audioText: listenSource,
-      transcription: listenSource,
-      question: 'Choose the correct answer.',
-      options: ['Option A', 'Option B', 'Option C'],
-      correct: 0,
-    });
-  }
+  const listeningStep: LessonStep = {
+    id: `${lesson.id}-listening`,
+    type: 'listening',
+    title: safeString(listeningActivity?.title, 'Listening'),
+    subtitle: 'Listen and choose',
+    exercises: listeningExercises,
+    xp: typeof listeningActivity?.xp === 'number' ? listeningActivity.xp : 10,
+  };
 
-  const speakingTarget = String(
-    speakingContent?.targetSentence ||
-      speakingContent?.target_sentence ||
-      speakingContent?.model_answer ||
-      lesson.reading_prompt ||
-      'Hello! My name is Maria.'
+  const speakingTarget = safeString(
+    speakingContent?.targetSentence || speakingContent?.target_sentence || speakingContent?.model_answer || lesson.reading_prompt,
+    'Hello! My name is Maria.'
   );
+  const fallbackKeywords = speakingTarget
+    .toLowerCase()
+    .replace(/[^a-z\s]/g, '')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 4);
+
   const speakingKeywords = Array.isArray(speakingContent?.keywords)
-    ? speakingContent.keywords.map((x: any) => String(x).toLowerCase())
-    : speakingTarget.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/).filter(Boolean).slice(0, 4);
+    ? speakingContent.keywords.map((x: any) => safeString(x).toLowerCase()).filter(Boolean)
+    : fallbackKeywords;
 
   const speakingStep: LessonStep = {
     id: `${lesson.id}-speaking`,
     type: 'speaking',
-    title: speakingActivity?.title || 'Speaking',
+    title: safeString(speakingActivity?.title, 'Speaking'),
     subtitle: 'Speak and improve',
     tasks: [
       {
-        prompt: String(speakingContent?.prompt || 'Say one short answer clearly.'),
+        prompt: safeString(speakingContent?.prompt, 'Say one short answer clearly.'),
         targetSentence: speakingTarget,
         keywords: speakingKeywords.slice(0, 3),
       },
@@ -250,18 +324,20 @@ function mapActivitiesToSteps(lesson: DbLesson, activities: DbActivity[]): Lesso
         keywords: speakingKeywords.slice(0, 4),
       },
     ],
-    xp: speakingActivity?.xp || 15,
+    xp: typeof speakingActivity?.xp === 'number' ? speakingActivity.xp : 15,
   };
+
+  const minWordsByLevel = lesson.level === 'A1' ? 12 : lesson.level === 'A2' ? 20 : lesson.level === 'B1' ? 45 : 70;
 
   const writingStep: LessonStep = {
     id: `${lesson.id}-writing`,
     type: 'writing',
-    title: writingActivity?.title || 'Writing',
+    title: safeString(writingActivity?.title, 'Writing'),
     subtitle: 'Write your answer',
-    prompt: String(writingContent?.prompt || lesson.writing_prompt || 'Write your answer in English.'),
-    minWords: typeof writingContent?.min_words === 'number' ? writingContent.min_words : lesson.level === 'A1' ? 12 : lesson.level === 'A2' ? 20 : lesson.level === 'B1' ? 45 : 70,
-    modelAnswer: String(writingContent?.model_answer || 'Write a clear and simple answer in English.'),
-    xp: writingActivity?.xp || 15,
+    prompt: safeString(writingContent?.prompt || lesson.writing_prompt, 'Write your answer in English.'),
+    minWords: typeof writingContent?.min_words === 'number' ? writingContent.min_words : minWordsByLevel,
+    modelAnswer: safeString(writingContent?.model_answer, 'Write a clear and simple answer in English.'),
+    xp: typeof writingActivity?.xp === 'number' ? writingActivity.xp : 15,
   };
 
   const totalXp = [grammarStep, readingStep, listeningStep, speakingStep, writingStep].reduce((sum, step) => sum + step.xp, 0);
@@ -380,7 +456,6 @@ function GrammarStep({ step, onNext }: { step: Extract<LessonStep, { type: 'gram
         <div className="p-6 overflow-y-auto">
           <div className="rounded-3xl border border-zinc-200 p-5">
             <p className="font-bold text-zinc-900 mb-4">{step.question.question}</p>
-
             <div className="space-y-3">
               {step.question.options.map((option, index) => (
                 <button
@@ -412,10 +487,7 @@ function GrammarStep({ step, onNext }: { step: Extract<LessonStep, { type: 'gram
 
       <div className="px-6 py-4 border-t border-zinc-100 flex items-center justify-between bg-white">
         <p className="text-sm text-zinc-500">Grammar is checked instantly when the learner clicks an answer.</p>
-        <button type="button" onClick={onNext} disabled={!answered} className={cls(
-          'rounded-2xl px-6 py-3 font-bold text-white transition-all',
-          answered ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed'
-        )}>
+        <button type="button" onClick={onNext} disabled={!answered} className={cls('rounded-2xl px-6 py-3 font-bold text-white transition-all', answered ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed')}>
           Continue
         </button>
       </div>
@@ -485,10 +557,7 @@ function ReadingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'read
 
       <div className="px-6 py-4 border-t border-zinc-100 flex items-center justify-between bg-white">
         <p className="text-sm text-zinc-500">Reading questions are corrected automatically when clicked.</p>
-        <button type="button" onClick={onNext} disabled={!finished} className={cls(
-          'rounded-2xl px-6 py-3 font-bold text-white transition-all',
-          finished ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed'
-        )}>
+        <button type="button" onClick={onNext} disabled={!finished} className={cls('rounded-2xl px-6 py-3 font-bold text-white transition-all', finished ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed')}>
           Continue
         </button>
       </div>
@@ -537,11 +606,7 @@ function ListeningStep({ step, onNext }: { step: Extract<LessonStep, { type: 'li
               Play audio
             </button>
 
-            <button
-              type="button"
-              onClick={() => setShowTranscript((prev) => ({ ...prev, [currentIndex]: !prev[currentIndex] }))}
-              className="rounded-2xl bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 font-bold px-5 py-3 inline-flex items-center gap-2"
-            >
+            <button type="button" onClick={() => setShowTranscript((prev) => ({ ...prev, [currentIndex]: !prev[currentIndex] }))} className="rounded-2xl bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 font-bold px-5 py-3 inline-flex items-center gap-2">
               <FileText size={18} />
               {showTranscript[currentIndex] ? 'Hide transcription' : 'View transcription'}
             </button>
@@ -583,17 +648,11 @@ function ListeningStep({ step, onNext }: { step: Extract<LessonStep, { type: 'li
           <p className="text-sm text-zinc-500">Each audio is corrected automatically when the learner clicks an option.</p>
 
           {currentIndex < step.exercises.length - 1 ? (
-            <button type="button" onClick={() => setCurrentIndex((prev) => prev + 1)} disabled={!isAnswered} className={cls(
-              'rounded-2xl px-6 py-3 font-bold text-white transition-all',
-              isAnswered ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed'
-            )}>
+            <button type="button" onClick={() => setCurrentIndex((prev) => prev + 1)} disabled={!isAnswered} className={cls('rounded-2xl px-6 py-3 font-bold text-white transition-all', isAnswered ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed')}>
               Next audio
             </button>
           ) : (
-            <button type="button" onClick={onNext} disabled={!finished} className={cls(
-              'rounded-2xl px-6 py-3 font-bold text-white transition-all',
-              finished ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed'
-            )}>
+            <button type="button" onClick={onNext} disabled={!finished} className={cls('rounded-2xl px-6 py-3 font-bold text-white transition-all', finished ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed')}>
               Continue
             </button>
           )}
@@ -744,10 +803,7 @@ function SpeakingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'spe
               {current.keywords.map((keyword) => {
                 const found = foundKeywords.includes(keyword);
                 return (
-                  <span
-                    key={keyword}
-                    className={cls('px-3 py-2 rounded-full text-sm font-bold border', found ? 'bg-green-50 text-green-700 border-green-200' : 'bg-zinc-100 text-zinc-500 border-zinc-200')}
-                  >
+                  <span key={keyword} className={cls('px-3 py-2 rounded-full text-sm font-bold border', found ? 'bg-green-50 text-green-700 border-green-200' : 'bg-zinc-100 text-zinc-500 border-zinc-200')}>
                     {keyword}
                   </span>
                 );
@@ -760,17 +816,11 @@ function SpeakingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'spe
           <p className="text-sm text-zinc-500">Recording stops automatically after silence. You can stop, record again, and improve.</p>
 
           {taskIndex < step.tasks.length - 1 ? (
-            <button type="button" onClick={() => setTaskIndex((prev) => prev + 1)} disabled={!transcripts[taskIndex]} className={cls(
-              'rounded-2xl px-6 py-3 font-bold text-white transition-all',
-              transcripts[taskIndex] ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed'
-            )}>
+            <button type="button" onClick={() => setTaskIndex((prev) => prev + 1)} disabled={!transcripts[taskIndex]} className={cls('rounded-2xl px-6 py-3 font-bold text-white transition-all', transcripts[taskIndex] ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed')}>
               Next task
             </button>
           ) : (
-            <button type="button" onClick={onNext} disabled={!allDone} className={cls(
-              'rounded-2xl px-6 py-3 font-bold text-white transition-all',
-              allDone ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed'
-            )}>
+            <button type="button" onClick={onNext} disabled={!allDone} className={cls('rounded-2xl px-6 py-3 font-bold text-white transition-all', allDone ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed')}>
               Continue
             </button>
           )}
@@ -815,10 +865,7 @@ function WritingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'writ
             <p className="text-zinc-700 leading-7">{step.modelAnswer}</p>
           </div>
 
-          <button type="button" onClick={onNext} disabled={!canFinish} className={cls(
-            'mt-6 w-full rounded-2xl px-6 py-4 font-bold text-white transition-all',
-            canFinish ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed'
-          )}>
+          <button type="button" onClick={onNext} disabled={!canFinish} className={cls('mt-6 w-full rounded-2xl px-6 py-4 font-bold text-white transition-all', canFinish ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed')}>
             Finish day
           </button>
         </div>
@@ -868,16 +915,30 @@ function PlayerView({
   onFinishDay: (earnedXp: number) => void;
 }) {
   const [stepIndex, setStepIndex] = useState(0);
-  const steps = useMemo(() => mapActivitiesToSteps(lesson, activities), [lesson, activities]);
+  const steps = useMemo(() => buildSafeSteps(lesson, activities), [lesson, activities]);
   const step = steps[stepIndex];
-  const progressPercent = Math.round((stepIndex / (steps.length - 1)) * 100);
+  const progressPercent = Math.round((stepIndex / Math.max(steps.length - 1, 1)) * 100);
+
+  if (!step) {
+    return (
+      <div className="h-screen bg-[#f6f7fb] p-5">
+        <div className="max-w-4xl mx-auto rounded-[28px] bg-white border border-zinc-200 shadow-sm p-8">
+          <h2 className="text-2xl font-black text-zinc-900">Lesson could not be opened.</h2>
+          <p className="text-zinc-500 mt-2">This usually happens when the lesson content is incomplete. The trail is still safe.</p>
+          <button type="button" onClick={onBack} className="mt-6 rounded-2xl bg-indigo-600 text-white px-5 py-3 font-bold">
+            Back to trail
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-screen overflow-hidden bg-[#f6f7fb] p-3 md:p-5">
       <div className="h-full max-w-6xl mx-auto flex flex-col">
         <div className="rounded-[28px] bg-white border border-zinc-200 shadow-sm px-5 py-4 mb-4">
           <div className="flex items-center justify-between gap-4">
-            <button type="button" onClick={stepIndex === 0 ? onBack : () => setStepIndex((prev) => prev - 1)} className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 font-bold text-zinc-700 inline-flex items-center gap-2">
+            <button type="button" onClick={stepIndex === 0 ? onBack : () => setStepIndex((prev) => Math.max(0, prev - 1))} className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 font-bold text-zinc-700 inline-flex items-center gap-2">
               <ChevronLeft size={18} />
               Back
             </button>
@@ -913,8 +974,8 @@ function PlayerView({
 
 export default function Learn() {
   const { profile, refreshProfile } = useAuth();
-
   const [loading, setLoading] = useState(true);
+  const [openingDay, setOpeningDay] = useState<string | null>(null);
   const [days, setDays] = useState<LessonDay[]>([]);
   const [completedDays, setCompletedDays] = useState<Record<string, boolean>>({});
   const [activeLesson, setActiveLesson] = useState<DbLesson | null>(null);
@@ -950,13 +1011,15 @@ export default function Learn() {
         });
 
         setCompletedDays(progressMap);
-        setDays(lessons.map((lesson) => ({
-          id: lesson.id,
-          level: lesson.level,
-          day: lesson.day,
-          title: lesson.title,
-          shortDescription: lesson.description || 'Open this day to start the lesson.',
-        })));
+        setDays(
+          lessons.map((lesson) => ({
+            id: lesson.id,
+            level: lesson.level,
+            day: lesson.day,
+            title: lesson.title,
+            shortDescription: safeString(lesson.description, 'Open this day to start the lesson.'),
+          }))
+        );
       } catch (error) {
         console.error('Erro ao carregar trilha:', error);
       } finally {
@@ -968,6 +1031,7 @@ export default function Learn() {
   }, [profile?.id, profile?.level]);
 
   const openDay = async (day: LessonDay) => {
+    setOpeningDay(day.id);
     try {
       const [{ data: lessonData, error: lessonError }, { data: activitiesData, error: activitiesError }] = await Promise.all([
         supabase
@@ -985,10 +1049,13 @@ export default function Learn() {
       if (lessonError) throw lessonError;
       if (activitiesError) throw activitiesError;
 
-      setActiveLesson(lessonData as DbLesson);
       setActiveActivities((activitiesData || []) as DbActivity[]);
+      setActiveLesson((lessonData || day) as DbLesson);
     } catch (error) {
       console.error('Erro ao abrir dia:', error);
+      alert('Não foi possível abrir este dia. O arquivo foi reforçado para não quebrar a tela, mas este dia ainda pode estar com conteúdo incompleto.');
+    } finally {
+      setOpeningDay(null);
     }
   };
 
@@ -1011,7 +1078,6 @@ export default function Learn() {
       if (profileError) throw profileError;
 
       setCompletedDays((prev) => ({ ...prev, [activeLesson.id]: true }));
-
       await refreshProfile();
       setActiveLesson(null);
       setActiveActivities([]);
@@ -1044,5 +1110,16 @@ export default function Learn() {
     );
   }
 
-  return <RoadmapView days={days} completedDays={completedDays} onOpenDay={openDay} />;
+  return (
+    <div className="relative">
+      {openingDay && (
+        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[1px] flex items-center justify-center">
+          <div className="rounded-3xl bg-white border border-zinc-200 shadow-sm px-6 py-5 font-bold text-zinc-800">
+            Opening day...
+          </div>
+        </div>
+      )}
+      <RoadmapView days={days} completedDays={completedDays} onOpenDay={openDay} />
+    </div>
+  );
 }
