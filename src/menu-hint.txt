@@ -1,0 +1,9 @@
+SEU AJUSTE OPCIONAL NO MENU
+
+Se hoje estiver assim:
+{ icon: ..., label: 'Practice', path: '/practice' }
+
+Você pode trocar só o label para:
+{ icon: AlertTriangle, label: 'Mistakes', path: '/practice' }
+
+Assim você muda o nome visível sem precisar mudar a rota agora.
