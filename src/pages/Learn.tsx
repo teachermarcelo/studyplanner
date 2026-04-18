@@ -10,6 +10,7 @@ import {
   Mic,
   PartyPopper,
   RotateCcw,
+  Sparkles,
   StopCircle,
   Volume2,
 } from 'lucide-react';
@@ -116,6 +117,8 @@ type LessonStep =
       message: string;
       encouragement: string;
       xpEarned: number;
+      isLevelCompletion?: boolean;
+      unlockedLevel?: Level | null;
     };
 
 type LessonDay = {
@@ -167,7 +170,7 @@ function normalizeQuestion(input: any, fallbackQuestion = 'Choose the correct op
   };
 }
 
-function fallbackReadingQuestions(text: string): Question[] {
+function fallbackReadingQuestions(): Question[] {
   return [
     {
       question: 'What is the main topic of the text?',
@@ -237,7 +240,7 @@ function buildSafeSteps(lesson: DbLesson, activities: DbActivity[]): LessonStep[
     : [];
   const readingQuestions = (rawReadingQuestions.length > 0
     ? rawReadingQuestions.map((q: any) => normalizeQuestion(q))
-    : fallbackReadingQuestions(readingText)
+    : fallbackReadingQuestions()
   ).slice(0, 4);
 
   const readingStep: LessonStep = {
@@ -341,14 +344,21 @@ function buildSafeSteps(lesson: DbLesson, activities: DbActivity[]): LessonStep[
   };
 
   const totalXp = [grammarStep, readingStep, listeningStep, speakingStep, writingStep].reduce((sum, step) => sum + step.xp, 0);
+  const isA1Completion = lesson.level === 'A1' && lesson.day === 45;
 
   const celebrationStep: LessonStep = {
     id: `${lesson.id}-celebration`,
     type: 'celebration',
-    title: 'Day Complete',
-    message: 'Great job. You completed today’s lesson.',
-    encouragement: 'Keep your rhythm. Come back tomorrow to build your English step by step, or continue now if you feel motivated.',
+    title: isA1Completion ? 'A1 Complete' : 'Day Complete',
+    message: isA1Completion
+      ? 'Parabéns! Você concluiu o A1. O nível A2 foi desbloqueado.'
+      : 'Great job. You completed today’s lesson.',
+    encouragement: isA1Completion
+      ? 'Você construiu uma base real de inglês. Agora continue para o A2 e mantenha o ritmo diário.'
+      : 'Keep your rhythm. Come back tomorrow to build your English step by step, or continue now if you feel motivated.',
     xpEarned: totalXp,
+    isLevelCompletion: isA1Completion,
+    unlockedLevel: isA1Completion ? 'A2' : null,
   };
 
   return [grammarStep, readingStep, listeningStep, speakingStep, writingStep, celebrationStep];
@@ -357,10 +367,12 @@ function buildSafeSteps(lesson: DbLesson, activities: DbActivity[]): LessonStep[
 function RoadmapView({
   days,
   completedDays,
+  currentLevel,
   onOpenDay,
 }: {
   days: LessonDay[];
   completedDays: Record<string, boolean>;
+  currentLevel: string;
   onOpenDay: (day: LessonDay) => void;
 }) {
   return (
@@ -369,7 +381,7 @@ function RoadmapView({
         <div className="rounded-[28px] bg-white border border-zinc-200 shadow-sm px-6 py-6 mb-4">
           <p className="text-xs uppercase tracking-[0.25em] font-bold text-indigo-500">Learn</p>
           <h1 className="text-3xl md:text-4xl font-black text-zinc-900 mt-2">Daily trail</h1>
-          <p className="text-zinc-500 mt-2">Click a day to start. Each lesson opens one screen at a time.</p>
+          <p className="text-zinc-500 mt-2">Current level: <span className="font-bold text-zinc-900">{currentLevel}</span>. Click a day to start.</p>
         </div>
 
         <div className="flex-1 min-h-0 overflow-y-auto rounded-[28px] bg-white border border-zinc-200 shadow-sm p-5 md:p-6">
@@ -876,13 +888,22 @@ function WritingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'writ
 
 function CelebrationStep({ step, onBackToTrail }: { step: Extract<LessonStep, { type: 'celebration' }>; onBackToTrail: () => void; }) {
   return (
-    <div className="h-full rounded-[28px] bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 text-white shadow-sm overflow-hidden flex items-center justify-center">
-      <div className="max-w-2xl text-center px-8">
+    <div className="h-full rounded-[28px] bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 text-white shadow-sm overflow-hidden flex items-center justify-center relative">
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute top-10 left-10 text-white/80"><PartyPopper size={38} /></div>
+        <div className="absolute top-20 right-16 text-white/80"><Sparkles size={34} /></div>
+        <div className="absolute bottom-16 left-20 text-white/80"><Sparkles size={30} /></div>
+        <div className="absolute bottom-10 right-10 text-white/80"><PartyPopper size={42} /></div>
+      </div>
+
+      <div className="max-w-2xl text-center px-8 relative">
         <div className="mx-auto w-20 h-20 rounded-full bg-white/15 flex items-center justify-center mb-6">
-          <PartyPopper size={34} />
+          {step.isLevelCompletion ? <Sparkles size={34} /> : <PartyPopper size={34} />}
         </div>
 
-        <p className="text-xs uppercase tracking-[0.25em] font-bold text-white/70">Daily win</p>
+        <p className="text-xs uppercase tracking-[0.25em] font-bold text-white/70">
+          {step.isLevelCompletion ? 'Level unlocked' : 'Daily win'}
+        </p>
         <h2 className="text-4xl md:text-5xl font-black mt-3">{step.title}</h2>
         <p className="mt-5 text-xl text-white/90">{step.message}</p>
         <p className="mt-4 text-white/80 leading-8">{step.encouragement}</p>
@@ -892,6 +913,12 @@ function CelebrationStep({ step, onBackToTrail }: { step: Extract<LessonStep, { 
             <PartyPopper size={18} />
             +{step.xpEarned} XP
           </div>
+          {step.isLevelCompletion && step.unlockedLevel && (
+            <div className="mt-3 inline-flex items-center gap-2 font-bold rounded-full bg-white/15 px-4 py-2">
+              <Lock size={16} />
+              {step.unlockedLevel} unlocked
+            </div>
+          )}
         </div>
 
         <button type="button" onClick={onBackToTrail} className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white text-indigo-700 px-6 py-4 font-black">
@@ -912,7 +939,7 @@ function PlayerView({
   lesson: DbLesson;
   activities: DbActivity[];
   onBack: () => void;
-  onFinishDay: (earnedXp: number) => void;
+  onFinishDay: (earnedXp: number, lesson: DbLesson, options?: { unlockLevel?: Level | null }) => void;
 }) {
   const [stepIndex, setStepIndex] = useState(0);
   const steps = useMemo(() => buildSafeSteps(lesson, activities), [lesson, activities]);
@@ -965,7 +992,12 @@ function PlayerView({
           {step.type === 'listening' && <ListeningStep step={step} onNext={() => setStepIndex((prev) => prev + 1)} />}
           {step.type === 'speaking' && <SpeakingStep step={step} onNext={() => setStepIndex((prev) => prev + 1)} />}
           {step.type === 'writing' && <WritingStep step={step} onNext={() => setStepIndex((prev) => prev + 1)} />}
-          {step.type === 'celebration' && <CelebrationStep step={step} onBackToTrail={() => onFinishDay(step.xpEarned)} />}
+          {step.type === 'celebration' && (
+            <CelebrationStep
+              step={step}
+              onBackToTrail={() => onFinishDay(step.xpEarned, lesson, { unlockLevel: step.unlockedLevel || null })}
+            />
+          )}
         </div>
       </div>
     </div>
@@ -1031,6 +1063,11 @@ export default function Learn() {
   }, [profile?.id, profile?.level]);
 
   const openDay = async (day: LessonDay) => {
+    if (day.level === 'A2' && profile?.level === 'A1') {
+      alert('Você precisa concluir os 45 dias do A1 antes de avançar para o A2.');
+      return;
+    }
+
     setOpeningDay(day.id);
     try {
       const [{ data: lessonData, error: lessonError }, { data: activitiesData, error: activitiesError }] = await Promise.all([
@@ -1059,28 +1096,40 @@ export default function Learn() {
     }
   };
 
-  const finishDay = async (earnedXp: number) => {
-    if (!profile?.id || !activeLesson) return;
+  const finishDay = async (earnedXp: number, lesson: DbLesson, options?: { unlockLevel?: Level | null }) => {
+    if (!profile?.id || !lesson) return;
 
     try {
       const { error: progressError } = await supabase.from('progress').upsert(
-        [{ user_id: profile.id, lesson_id: activeLesson.id, score: 100, completed_at: new Date().toISOString() }],
+        [{ user_id: profile.id, lesson_id: lesson.id, score: 100, completed_at: new Date().toISOString() }],
         { onConflict: 'user_id,lesson_id' }
       );
 
       if (progressError) throw progressError;
 
+      const profileUpdate: Record<string, any> = {
+        xp: (profile.xp || 0) + earnedXp,
+      };
+
+      if (options?.unlockLevel && lesson.level === 'A1' && lesson.day === 45) {
+        profileUpdate.level = options.unlockLevel;
+      }
+
       const { error: profileError } = await supabase
         .from('profiles')
-        .update({ xp: (profile.xp || 0) + earnedXp })
+        .update(profileUpdate)
         .eq('id', profile.id);
 
       if (profileError) throw profileError;
 
-      setCompletedDays((prev) => ({ ...prev, [activeLesson.id]: true }));
-      await refreshProfile();
+      setCompletedDays((prev) => ({ ...prev, [lesson.id]: true }));
       setActiveLesson(null);
       setActiveActivities([]);
+      await refreshProfile();
+
+      if (options?.unlockLevel && lesson.level === 'A1' && lesson.day === 45) {
+        alert('Parabéns! Você concluiu o A1 e o nível A2 foi desbloqueado.');
+      }
     } catch (error) {
       console.error('Erro ao finalizar dia:', error);
     }
@@ -1119,7 +1168,7 @@ export default function Learn() {
           </div>
         </div>
       )}
-      <RoadmapView days={days} completedDays={completedDays} onOpenDay={openDay} />
+      <RoadmapView days={days} completedDays={completedDays} currentLevel={profile?.level || 'A1'} onOpenDay={openDay} />
     </div>
   );
 }
