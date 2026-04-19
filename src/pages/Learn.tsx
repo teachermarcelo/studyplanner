@@ -238,10 +238,10 @@ function buildSafeSteps(lesson: DbLesson, activities: DbActivity[]): LessonStep[
     : Array.isArray(quizQuestions)
     ? quizQuestions
     : [];
+
   const readingQuestions = (rawReadingQuestions.length > 0
     ? rawReadingQuestions.map((q: any) => normalizeQuestion(q))
-    : fallbackReadingQuestions()
-  ).slice(0, 4);
+    : fallbackReadingQuestions()).slice(0, 4);
 
   const readingStep: LessonStep = {
     id: `${lesson.id}-reading`,
@@ -270,8 +270,7 @@ function buildSafeSteps(lesson: DbLesson, activities: DbActivity[]): LessonStep[
         { question: 'Choose the correct answer.', options: ['Option A', 'Option B', 'Option C'], correct: 0 },
         { question: 'Choose the correct answer.', options: ['Option A', 'Option B', 'Option C'], correct: 0 },
         { question: 'Choose the correct answer.', options: ['Option A', 'Option B', 'Option C'], correct: 0 },
-      ]
-  )
+      ])
     .slice(0, 3)
     .map((q: any) => ({
       audioText: listeningSource,
@@ -294,6 +293,7 @@ function buildSafeSteps(lesson: DbLesson, activities: DbActivity[]): LessonStep[
     speakingContent?.targetSentence || speakingContent?.target_sentence || speakingContent?.model_answer || lesson.reading_prompt,
     'Hello! My name is Maria.'
   );
+
   const fallbackKeywords = speakingTarget
     .toLowerCase()
     .replace(/[^a-z\s]/g, '')
@@ -376,15 +376,17 @@ function RoadmapView({
   onOpenDay: (day: LessonDay) => void;
 }) {
   return (
-    <div className="h-screen overflow-hidden bg-[#f6f7fb] p-3 md:p-5">
-      <div className="h-full max-w-5xl mx-auto flex flex-col">
-        <div className="rounded-[28px] bg-white border border-zinc-200 shadow-sm px-6 py-6 mb-4">
+    <div className="w-full min-h-full bg-[#f6f7fb] px-2 py-2 sm:px-3 sm:py-3 md:p-5">
+      <div className="w-full max-w-5xl mx-auto flex flex-col gap-4">
+        <div className="rounded-[24px] sm:rounded-[28px] bg-white border border-zinc-200 shadow-sm px-4 py-5 sm:px-6 sm:py-6">
           <p className="text-xs uppercase tracking-[0.25em] font-bold text-indigo-500">Learn</p>
-          <h1 className="text-3xl md:text-4xl font-black text-zinc-900 mt-2">Daily trail</h1>
-          <p className="text-zinc-500 mt-2">Current level: <span className="font-bold text-zinc-900">{currentLevel}</span>. Click a day to start.</p>
+          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-zinc-900 mt-2">Daily trail</h1>
+          <p className="text-sm sm:text-base text-zinc-500 mt-2">
+            Current level: <span className="font-bold text-zinc-900">{currentLevel}</span>. Click a day to start.
+          </p>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto rounded-[28px] bg-white border border-zinc-200 shadow-sm p-5 md:p-6">
+        <div className="w-full rounded-[24px] sm:rounded-[28px] bg-white border border-zinc-200 shadow-sm p-4 sm:p-5 md:p-6 overflow-hidden">
           <div className="space-y-4">
             {days.map((day, index) => {
               const previousDay = days[index - 1];
@@ -398,27 +400,37 @@ function RoadmapView({
                   disabled={!unlocked}
                   onClick={() => onOpenDay(day)}
                   className={cls(
-                    'w-full rounded-[24px] border text-left p-5 transition-all',
-                    unlocked ? 'bg-white border-zinc-200 hover:border-indigo-300 hover:shadow-sm' : 'bg-zinc-50 border-zinc-200 opacity-60 cursor-not-allowed'
+                    'w-full rounded-[24px] border text-left p-4 sm:p-5 transition-all min-w-0 overflow-hidden',
+                    unlocked
+                      ? 'bg-white border-zinc-200 hover:border-indigo-300 hover:shadow-sm'
+                      : 'bg-zinc-50 border-zinc-200 opacity-60 cursor-not-allowed'
                   )}
                 >
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex items-start gap-4">
-                      <div className={cls(
-                        'w-12 h-12 rounded-2xl flex items-center justify-center shrink-0',
-                        completed ? 'bg-green-100 text-green-700' : unlocked ? 'bg-indigo-100 text-indigo-700' : 'bg-zinc-200 text-zinc-500'
-                      )}>
+                  <div className="flex items-start justify-between gap-3 sm:gap-4 min-w-0">
+                    <div className="flex items-start gap-3 sm:gap-4 min-w-0 flex-1">
+                      <div
+                        className={cls(
+                          'w-12 h-12 rounded-2xl flex items-center justify-center shrink-0',
+                          completed
+                            ? 'bg-green-100 text-green-700'
+                            : unlocked
+                            ? 'bg-indigo-100 text-indigo-700'
+                            : 'bg-zinc-200 text-zinc-500'
+                        )}
+                      >
                         {completed ? <CheckCircle2 size={22} /> : unlocked ? <BookOpen size={22} /> : <Lock size={20} />}
                       </div>
 
-                      <div>
-                        <div className="text-xs uppercase tracking-[0.2em] font-bold text-zinc-400">{day.level} · Day {day.day}</div>
-                        <h3 className="text-xl font-black text-zinc-900 mt-1">{day.title}</h3>
-                        <p className="text-zinc-500 mt-2">{day.shortDescription}</p>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-[11px] sm:text-xs uppercase tracking-[0.18em] sm:tracking-[0.2em] font-bold text-zinc-400 break-words">
+                          {day.level} · Day {day.day}
+                        </div>
+                        <h3 className="text-lg sm:text-xl font-black text-zinc-900 mt-1 break-words">{day.title}</h3>
+                        <p className="text-sm sm:text-base text-zinc-500 mt-2 break-words">{day.shortDescription}</p>
                       </div>
                     </div>
 
-                    <div className="hidden md:flex items-center gap-2 text-indigo-600 font-bold">
+                    <div className="hidden md:flex items-center gap-2 text-indigo-600 font-bold shrink-0">
                       Open
                       <ChevronRight size={18} />
                     </div>
@@ -433,41 +445,43 @@ function RoadmapView({
   );
 }
 
-function GrammarStep({ step, onNext }: { step: Extract<LessonStep, { type: 'grammar' }>; onNext: () => void; }) {
+function GrammarStep({ step, onNext }: { step: Extract<LessonStep, { type: 'grammar' }>; onNext: () => void }) {
   const [selected, setSelected] = useState<number | null>(null);
   const answered = selected !== null;
   const isCorrect = selected === step.question.correct;
 
   return (
-    <div className="h-full flex flex-col rounded-[28px] bg-white border border-zinc-200 shadow-sm overflow-hidden">
-      <div className="px-6 py-5 border-b border-zinc-100 bg-gradient-to-r from-violet-50 to-white">
+    <div className="w-full rounded-[24px] sm:rounded-[28px] bg-white border border-zinc-200 shadow-sm overflow-hidden">
+      <div className="px-4 py-5 sm:px-6 border-b border-zinc-100 bg-gradient-to-r from-violet-50 to-white">
         <p className="text-xs uppercase tracking-[0.25em] font-bold text-violet-600">{step.subtitle}</p>
-        <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mt-2">{step.title}</h2>
+        <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mt-2 break-words">{step.title}</h2>
       </div>
 
-      <div className="flex-1 min-h-0 grid md:grid-cols-[1fr_0.9fr]">
-        <div className="p-6 border-b md:border-b-0 md:border-r border-zinc-100 overflow-y-auto">
-          <div className="rounded-3xl bg-zinc-50 border border-zinc-200 p-5">
+      <div className="grid md:grid-cols-[1fr_0.9fr]">
+        <div className="p-4 sm:p-6 border-b md:border-b-0 md:border-r border-zinc-100 overflow-y-auto min-w-0">
+          <div className="rounded-3xl bg-zinc-50 border border-zinc-200 p-4 sm:p-5">
             <div className="inline-flex items-center gap-2 text-violet-600 font-bold mb-3">
               <GraduationCap size={18} />
               Grammar rule
             </div>
-            <p className="text-zinc-800 leading-8">{step.explanation}</p>
+            <p className="text-zinc-800 leading-7 sm:leading-8 break-words">{step.explanation}</p>
           </div>
 
-          <div className="mt-5 rounded-3xl bg-white border border-zinc-200 p-5">
+          <div className="mt-5 rounded-3xl bg-white border border-zinc-200 p-4 sm:p-5">
             <p className="text-sm font-bold text-zinc-500 mb-3">Examples</p>
             <ul className="space-y-3">
               {step.examples.map((example, index) => (
-                <li key={index} className="text-zinc-800 leading-7">• {example}</li>
+                <li key={index} className="text-zinc-800 leading-7 break-words">
+                  • {example}
+                </li>
               ))}
             </ul>
           </div>
         </div>
 
-        <div className="p-6 overflow-y-auto">
-          <div className="rounded-3xl border border-zinc-200 p-5">
-            <p className="font-bold text-zinc-900 mb-4">{step.question.question}</p>
+        <div className="p-4 sm:p-6 overflow-y-auto min-w-0">
+          <div className="rounded-3xl border border-zinc-200 p-4 sm:p-5">
+            <p className="font-bold text-zinc-900 mb-4 break-words">{step.question.question}</p>
             <div className="space-y-3">
               {step.question.options.map((option, index) => (
                 <button
@@ -476,10 +490,12 @@ function GrammarStep({ step, onNext }: { step: Extract<LessonStep, { type: 'gram
                   disabled={answered}
                   onClick={() => setSelected(index)}
                   className={cls(
-                    'w-full text-left rounded-2xl border px-4 py-3 font-semibold transition-all',
-                    answered && index === step.question.correct ? 'border-green-500 bg-green-50 text-green-700' :
-                    answered && selected === index && !isCorrect ? 'border-red-500 bg-red-50 text-red-700' :
-                    'border-zinc-200 hover:border-zinc-300 bg-white text-zinc-700'
+                    'w-full text-left rounded-2xl border px-4 py-3 font-semibold transition-all break-words',
+                    answered && index === step.question.correct
+                      ? 'border-green-500 bg-green-50 text-green-700'
+                      : answered && selected === index && !isCorrect
+                      ? 'border-red-500 bg-red-50 text-red-700'
+                      : 'border-zinc-200 hover:border-zinc-300 bg-white text-zinc-700'
                   )}
                 >
                   {option}
@@ -490,16 +506,24 @@ function GrammarStep({ step, onNext }: { step: Extract<LessonStep, { type: 'gram
             {answered && (
               <div className={cls('mt-4 text-sm', isCorrect ? 'text-green-600' : 'text-red-600')}>
                 <p className="font-bold">{isCorrect ? 'Correct' : 'Incorrect'}</p>
-                {step.question.explanation && <p className="mt-1 text-zinc-500">{step.question.explanation}</p>}
+                {step.question.explanation && <p className="mt-1 text-zinc-500 break-words">{step.question.explanation}</p>}
               </div>
             )}
           </div>
         </div>
       </div>
 
-      <div className="px-6 py-4 border-t border-zinc-100 flex items-center justify-between bg-white">
-        <p className="text-sm text-zinc-500">Grammar is checked instantly when the learner clicks an answer.</p>
-        <button type="button" onClick={onNext} disabled={!answered} className={cls('rounded-2xl px-6 py-3 font-bold text-white transition-all', answered ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed')}>
+      <div className="px-4 py-4 sm:px-6 border-t border-zinc-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white">
+        <p className="text-sm text-zinc-500 break-words">Grammar is checked instantly when the learner clicks an answer.</p>
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={!answered}
+          className={cls(
+            'w-full sm:w-auto rounded-2xl px-6 py-3 font-bold text-white transition-all',
+            answered ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed'
+          )}
+        >
           Continue
         </button>
       </div>
@@ -507,32 +531,34 @@ function GrammarStep({ step, onNext }: { step: Extract<LessonStep, { type: 'gram
   );
 }
 
-function ReadingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'reading' }>; onNext: () => void; }) {
+function ReadingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'reading' }>; onNext: () => void }) {
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [shown, setShown] = useState<Record<number, boolean>>({});
   const finished = Object.keys(shown).length === step.questions.length;
 
   return (
-    <div className="h-full flex flex-col rounded-[28px] bg-white border border-zinc-200 shadow-sm overflow-hidden">
-      <div className="px-6 py-5 border-b border-zinc-100 bg-gradient-to-r from-rose-50 to-white">
+    <div className="w-full rounded-[24px] sm:rounded-[28px] bg-white border border-zinc-200 shadow-sm overflow-hidden">
+      <div className="px-4 py-5 sm:px-6 border-b border-zinc-100 bg-gradient-to-r from-rose-50 to-white">
         <p className="text-xs uppercase tracking-[0.25em] font-bold text-rose-600">{step.subtitle}</p>
-        <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mt-2">{step.title}</h2>
+        <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mt-2 break-words">{step.title}</h2>
       </div>
 
-      <div className="flex-1 min-h-0 grid md:grid-cols-[1.15fr_0.85fr]">
-        <div className="p-6 border-b md:border-b-0 md:border-r border-zinc-100 overflow-y-auto">
-          <p className="text-[17px] leading-8 text-zinc-800">{step.text}</p>
+      <div className="grid md:grid-cols-[1.15fr_0.85fr]">
+        <div className="p-4 sm:p-6 border-b md:border-b-0 md:border-r border-zinc-100 overflow-y-auto min-w-0">
+          <p className="text-base sm:text-[17px] leading-7 sm:leading-8 text-zinc-800 break-words">{step.text}</p>
         </div>
 
-        <div className="p-6 overflow-y-auto space-y-5">
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-5 min-w-0">
           {step.questions.map((question, qIndex) => {
             const selected = answers[qIndex];
             const isAnswered = shown[qIndex];
             const isCorrect = selected === question.correct;
 
             return (
-              <div key={qIndex} className="rounded-2xl border border-zinc-200 p-4">
-                <p className="font-bold text-zinc-900 mb-3">{qIndex + 1}. {question.question}</p>
+              <div key={qIndex} className="rounded-2xl border border-zinc-200 p-4 min-w-0">
+                <p className="font-bold text-zinc-900 mb-3 break-words">
+                  {qIndex + 1}. {question.question}
+                </p>
                 <div className="space-y-2">
                   {question.options.map((option, optIndex) => (
                     <button
@@ -544,10 +570,12 @@ function ReadingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'read
                         setShown((prev) => ({ ...prev, [qIndex]: true }));
                       }}
                       className={cls(
-                        'w-full text-left rounded-2xl border px-4 py-3 font-semibold transition-all',
-                        isAnswered && optIndex === question.correct ? 'border-green-500 bg-green-50 text-green-700' :
-                        isAnswered && selected === optIndex && !isCorrect ? 'border-red-500 bg-red-50 text-red-700' :
-                        'border-zinc-200 hover:border-zinc-300 bg-white text-zinc-700'
+                        'w-full text-left rounded-2xl border px-4 py-3 font-semibold transition-all break-words',
+                        isAnswered && optIndex === question.correct
+                          ? 'border-green-500 bg-green-50 text-green-700'
+                          : isAnswered && selected === optIndex && !isCorrect
+                          ? 'border-red-500 bg-red-50 text-red-700'
+                          : 'border-zinc-200 hover:border-zinc-300 bg-white text-zinc-700'
                       )}
                     >
                       {option}
@@ -558,7 +586,7 @@ function ReadingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'read
                 {isAnswered && (
                   <div className={cls('mt-3 text-sm', isCorrect ? 'text-green-600' : 'text-red-600')}>
                     <p className="font-bold">{isCorrect ? 'Correct' : 'Incorrect'}</p>
-                    {question.explanation && <p className="mt-1 text-zinc-500">{question.explanation}</p>}
+                    {question.explanation && <p className="mt-1 text-zinc-500 break-words">{question.explanation}</p>}
                   </div>
                 )}
               </div>
@@ -567,9 +595,17 @@ function ReadingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'read
         </div>
       </div>
 
-      <div className="px-6 py-4 border-t border-zinc-100 flex items-center justify-between bg-white">
-        <p className="text-sm text-zinc-500">Reading questions are corrected automatically when clicked.</p>
-        <button type="button" onClick={onNext} disabled={!finished} className={cls('rounded-2xl px-6 py-3 font-bold text-white transition-all', finished ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed')}>
+      <div className="px-4 py-4 sm:px-6 border-t border-zinc-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between bg-white">
+        <p className="text-sm text-zinc-500 break-words">Reading questions are corrected automatically when clicked.</p>
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={!finished}
+          className={cls(
+            'w-full sm:w-auto rounded-2xl px-6 py-3 font-bold text-white transition-all',
+            finished ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed'
+          )}
+        >
           Continue
         </button>
       </div>
@@ -577,7 +613,7 @@ function ReadingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'read
   );
 }
 
-function ListeningStep({ step, onNext }: { step: Extract<LessonStep, { type: 'listening' }>; onNext: () => void; }) {
+function ListeningStep({ step, onNext }: { step: Extract<LessonStep, { type: 'listening' }>; onNext: () => void }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<number, number>>({});
   const [showTranscript, setShowTranscript] = useState<Record<number, boolean>>({});
@@ -599,36 +635,50 @@ function ListeningStep({ step, onNext }: { step: Extract<LessonStep, { type: 'li
   };
 
   return (
-    <div className="h-full flex flex-col rounded-[28px] bg-white border border-zinc-200 shadow-sm overflow-hidden">
-      <div className="px-6 py-5 border-b border-zinc-100 bg-gradient-to-r from-emerald-50 to-white">
+    <div className="w-full rounded-[24px] sm:rounded-[28px] bg-white border border-zinc-200 shadow-sm overflow-hidden">
+      <div className="px-4 py-5 sm:px-6 border-b border-zinc-100 bg-gradient-to-r from-emerald-50 to-white">
         <p className="text-xs uppercase tracking-[0.25em] font-bold text-emerald-600">{step.subtitle}</p>
-        <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mt-2">{step.title}</h2>
+        <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mt-2 break-words">{step.title}</h2>
       </div>
 
-      <div className="flex-1 min-h-0 p-6 flex flex-col justify-between">
-        <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-sm font-bold text-zinc-500">Audio {currentIndex + 1} of {step.exercises.length}</div>
-            <div className="text-sm text-zinc-500">Completed: <span className="font-bold text-zinc-900">{Object.keys(answers).length}/{step.exercises.length}</span></div>
+      <div className="p-4 sm:p-6 flex flex-col gap-5">
+        <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-4 sm:p-6 min-w-0">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <div className="text-sm font-bold text-zinc-500">
+              Audio {currentIndex + 1} of {step.exercises.length}
+            </div>
+            <div className="text-sm text-zinc-500">
+              Completed: <span className="font-bold text-zinc-900">{Object.keys(answers).length}/{step.exercises.length}</span>
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-3 mb-5">
-            <button type="button" onClick={playAudio} className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3 inline-flex items-center gap-2">
+            <button
+              type="button"
+              onClick={playAudio}
+              className="rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-5 py-3 inline-flex items-center gap-2"
+            >
               <Volume2 size={18} />
               Play audio
             </button>
 
-            <button type="button" onClick={() => setShowTranscript((prev) => ({ ...prev, [currentIndex]: !prev[currentIndex] }))} className="rounded-2xl bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 font-bold px-5 py-3 inline-flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowTranscript((prev) => ({ ...prev, [currentIndex]: !prev[currentIndex] }))}
+              className="rounded-2xl bg-white hover:bg-zinc-100 border border-zinc-200 text-zinc-700 font-bold px-5 py-3 inline-flex items-center gap-2"
+            >
               <FileText size={18} />
               {showTranscript[currentIndex] ? 'Hide transcription' : 'View transcription'}
             </button>
           </div>
 
           {showTranscript[currentIndex] && (
-            <div className="rounded-2xl bg-white border border-zinc-200 p-4 mb-5 text-zinc-700">{current.transcription}</div>
+            <div className="rounded-2xl bg-white border border-zinc-200 p-4 mb-5 text-zinc-700 break-words">
+              {current.transcription}
+            </div>
           )}
 
-          <p className="font-bold text-zinc-900 mb-4">{current.question}</p>
+          <p className="font-bold text-zinc-900 mb-4 text-lg break-words">{current.question}</p>
 
           <div className="space-y-3">
             {current.options.map((option, optIndex) => (
@@ -638,10 +688,12 @@ function ListeningStep({ step, onNext }: { step: Extract<LessonStep, { type: 'li
                 disabled={isAnswered}
                 onClick={() => setAnswers((prev) => ({ ...prev, [currentIndex]: optIndex }))}
                 className={cls(
-                  'w-full text-left rounded-2xl border px-4 py-3 font-semibold transition-all',
-                  isAnswered && optIndex === current.correct ? 'border-green-500 bg-green-50 text-green-700' :
-                  isAnswered && selected === optIndex && selected !== current.correct ? 'border-red-500 bg-red-50 text-red-700' :
-                  'border-zinc-200 hover:border-zinc-300 bg-white text-zinc-700'
+                  'w-full text-left rounded-2xl border px-4 py-3 font-semibold transition-all break-words',
+                  isAnswered && optIndex === current.correct
+                    ? 'border-green-500 bg-green-50 text-green-700'
+                    : isAnswered && selected === optIndex && selected !== current.correct
+                    ? 'border-red-500 bg-red-50 text-red-700'
+                    : 'border-zinc-200 hover:border-zinc-300 bg-white text-zinc-700'
                 )}
               >
                 {option}
@@ -656,15 +708,33 @@ function ListeningStep({ step, onNext }: { step: Extract<LessonStep, { type: 'li
           )}
         </div>
 
-        <div className="pt-5 flex items-center justify-between">
-          <p className="text-sm text-zinc-500">Each audio is corrected automatically when the learner clicks an option.</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-zinc-500 break-words">
+            Each audio is corrected automatically when the learner clicks an option.
+          </p>
 
           {currentIndex < step.exercises.length - 1 ? (
-            <button type="button" onClick={() => setCurrentIndex((prev) => prev + 1)} disabled={!isAnswered} className={cls('rounded-2xl px-6 py-3 font-bold text-white transition-all', isAnswered ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed')}>
+            <button
+              type="button"
+              onClick={() => setCurrentIndex((prev) => prev + 1)}
+              disabled={!isAnswered}
+              className={cls(
+                'w-full sm:w-auto rounded-2xl px-6 py-3 font-bold text-white transition-all',
+                isAnswered ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed'
+              )}
+            >
               Next audio
             </button>
           ) : (
-            <button type="button" onClick={onNext} disabled={!finished} className={cls('rounded-2xl px-6 py-3 font-bold text-white transition-all', finished ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed')}>
+            <button
+              type="button"
+              onClick={onNext}
+              disabled={!finished}
+              className={cls(
+                'w-full sm:w-auto rounded-2xl px-6 py-3 font-bold text-white transition-all',
+                finished ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed'
+              )}
+            >
               Continue
             </button>
           )}
@@ -674,7 +744,7 @@ function ListeningStep({ step, onNext }: { step: Extract<LessonStep, { type: 'li
   );
 }
 
-function SpeakingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'speaking' }>; onNext: () => void; }) {
+function SpeakingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'speaking' }>; onNext: () => void }) {
   const [taskIndex, setTaskIndex] = useState(0);
   const [transcripts, setTranscripts] = useState<Record<number, string>>({});
   const [isRecording, setIsRecording] = useState(false);
@@ -691,11 +761,12 @@ function SpeakingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'spe
 
   const ratio = current.keywords.length === 0 ? 0 : foundKeywords.length / current.keywords.length;
   const scoreColor = ratio >= 0.75 ? 'green' : ratio >= 0.4 ? 'yellow' : 'red';
-  const scoreClasses = scoreColor === 'green'
-    ? 'bg-green-50 text-green-700 border-green-200'
-    : scoreColor === 'yellow'
-    ? 'bg-amber-50 text-amber-700 border-amber-200'
-    : 'bg-red-50 text-red-700 border-red-200';
+  const scoreClasses =
+    scoreColor === 'green'
+      ? 'bg-green-50 text-green-700 border-green-200'
+      : scoreColor === 'yellow'
+      ? 'bg-amber-50 text-amber-700 border-amber-200'
+      : 'bg-red-50 text-red-700 border-red-200';
 
   const supportsRecognition = typeof window !== 'undefined' && !!(window.SpeechRecognition || window.webkitSpeechRecognition);
 
@@ -761,50 +832,67 @@ function SpeakingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'spe
   const allDone = doneCount === step.tasks.length;
 
   return (
-    <div className="h-full flex flex-col rounded-[28px] bg-white border border-zinc-200 shadow-sm overflow-hidden">
-      <div className="px-6 py-5 border-b border-zinc-100 bg-gradient-to-r from-amber-50 to-white">
+    <div className="w-full rounded-[24px] sm:rounded-[28px] bg-white border border-zinc-200 shadow-sm overflow-hidden">
+      <div className="px-4 py-5 sm:px-6 border-b border-zinc-100 bg-gradient-to-r from-amber-50 to-white">
         <p className="text-xs uppercase tracking-[0.25em] font-bold text-amber-600">{step.subtitle}</p>
-        <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mt-2">{step.title}</h2>
+        <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mt-2 break-words">{step.title}</h2>
       </div>
 
-      <div className="flex-1 min-h-0 p-6 flex flex-col justify-between">
-        <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-sm font-bold text-zinc-500">Speaking task {taskIndex + 1} of {step.tasks.length}</div>
-            <div className="text-sm text-zinc-500">Completed: <span className="font-bold text-zinc-900">{doneCount}/{step.tasks.length}</span></div>
+      <div className="p-4 sm:p-6 flex flex-col gap-5">
+        <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-4 sm:p-6 min-w-0">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+            <div className="text-sm font-bold text-zinc-500">
+              Speaking task {taskIndex + 1} of {step.tasks.length}
+            </div>
+            <div className="text-sm text-zinc-500">
+              Completed: <span className="font-bold text-zinc-900">{doneCount}/{step.tasks.length}</span>
+            </div>
           </div>
 
-          <p className="font-bold text-zinc-900 text-lg">{current.prompt}</p>
+          <p className="font-bold text-zinc-900 text-lg break-words">{current.prompt}</p>
 
           <div className="mt-4 rounded-2xl bg-white border border-zinc-200 p-4">
             <p className="text-sm font-semibold text-zinc-500 mb-2">Target</p>
-            <p className="text-zinc-800">{current.targetSentence}</p>
+            <p className="text-zinc-800 break-words">{current.targetSentence}</p>
           </div>
 
           <div className="mt-5 flex flex-wrap gap-3">
-            <button type="button" onClick={startRecording} disabled={isRecording} className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold px-5 py-3 inline-flex items-center gap-2 disabled:opacity-60">
+            <button
+              type="button"
+              onClick={startRecording}
+              disabled={isRecording}
+              className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold px-5 py-3 inline-flex items-center gap-2 disabled:opacity-60"
+            >
               <Mic size={18} />
               {isRecording ? 'Recording...' : 'Record'}
             </button>
 
-            <button type="button" onClick={stopRecording} className="rounded-2xl bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-700 font-bold px-5 py-3 inline-flex items-center gap-2">
+            <button
+              type="button"
+              onClick={stopRecording}
+              className="rounded-2xl bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-700 font-bold px-5 py-3 inline-flex items-center gap-2"
+            >
               <StopCircle size={18} />
               Stop recording
             </button>
 
-            <button type="button" onClick={() => setTranscripts((prev) => ({ ...prev, [taskIndex]: '' }))} className="rounded-2xl bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-700 font-bold px-5 py-3 inline-flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setTranscripts((prev) => ({ ...prev, [taskIndex]: '' }))}
+              className="rounded-2xl bg-white border border-zinc-200 hover:border-zinc-300 text-zinc-700 font-bold px-5 py-3 inline-flex items-center gap-2"
+            >
               <RotateCcw size={18} />
               Record again
             </button>
           </div>
 
-          <div className="mt-5 grid md:grid-cols-[1fr_auto] gap-4">
-            <div className="rounded-2xl bg-white border border-zinc-200 p-4">
+          <div className="mt-5 grid gap-4 md:grid-cols-[1fr_auto]">
+            <div className="rounded-2xl bg-white border border-zinc-200 p-4 min-w-0">
               <p className="text-sm font-semibold text-zinc-500 mb-2">Your transcript</p>
-              <p className="text-zinc-900 min-h-[48px]">{transcript || 'Your speech will appear here.'}</p>
+              <p className="text-zinc-900 min-h-[48px] break-words">{transcript || 'Your speech will appear here.'}</p>
             </div>
 
-            <div className={cls('rounded-2xl border px-5 py-4 font-bold min-w-[180px] flex items-center justify-center', scoreClasses)}>
+            <div className={cls('rounded-2xl border px-5 py-4 font-bold min-w-0 md:min-w-[180px] flex items-center justify-center', scoreClasses)}>
               {scoreColor === 'green' ? 'Very good' : scoreColor === 'yellow' ? 'Almost there' : 'Needs improvement'}
             </div>
           </div>
@@ -815,7 +903,13 @@ function SpeakingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'spe
               {current.keywords.map((keyword) => {
                 const found = foundKeywords.includes(keyword);
                 return (
-                  <span key={keyword} className={cls('px-3 py-2 rounded-full text-sm font-bold border', found ? 'bg-green-50 text-green-700 border-green-200' : 'bg-zinc-100 text-zinc-500 border-zinc-200')}>
+                  <span
+                    key={keyword}
+                    className={cls(
+                      'px-3 py-2 rounded-full text-sm font-bold border break-words',
+                      found ? 'bg-green-50 text-green-700 border-green-200' : 'bg-zinc-100 text-zinc-500 border-zinc-200'
+                    )}
+                  >
                     {keyword}
                   </span>
                 );
@@ -824,15 +918,33 @@ function SpeakingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'spe
           </div>
         </div>
 
-        <div className="pt-5 flex items-center justify-between">
-          <p className="text-sm text-zinc-500">Recording stops automatically after silence. You can stop, record again, and improve.</p>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-zinc-500 break-words">
+            Recording stops automatically after silence. You can stop, record again, and improve.
+          </p>
 
           {taskIndex < step.tasks.length - 1 ? (
-            <button type="button" onClick={() => setTaskIndex((prev) => prev + 1)} disabled={!transcripts[taskIndex]} className={cls('rounded-2xl px-6 py-3 font-bold text-white transition-all', transcripts[taskIndex] ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed')}>
+            <button
+              type="button"
+              onClick={() => setTaskIndex((prev) => prev + 1)}
+              disabled={!transcripts[taskIndex]}
+              className={cls(
+                'w-full sm:w-auto rounded-2xl px-6 py-3 font-bold text-white transition-all',
+                transcripts[taskIndex] ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed'
+              )}
+            >
               Next task
             </button>
           ) : (
-            <button type="button" onClick={onNext} disabled={!allDone} className={cls('rounded-2xl px-6 py-3 font-bold text-white transition-all', allDone ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed')}>
+            <button
+              type="button"
+              onClick={onNext}
+              disabled={!allDone}
+              className={cls(
+                'w-full sm:w-auto rounded-2xl px-6 py-3 font-bold text-white transition-all',
+                allDone ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed'
+              )}
+            >
               Continue
             </button>
           )}
@@ -842,42 +954,50 @@ function SpeakingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'spe
   );
 }
 
-function WritingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'writing' }>; onNext: () => void; }) {
+function WritingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'writing' }>; onNext: () => void }) {
   const [text, setText] = useState('');
   const wordCount = useMemo(() => (text.trim() ? text.trim().split(/\s+/).length : 0), [text]);
   const canFinish = wordCount >= step.minWords;
 
   return (
-    <div className="h-full flex flex-col rounded-[28px] bg-white border border-zinc-200 shadow-sm overflow-hidden">
-      <div className="px-6 py-5 border-b border-zinc-100 bg-gradient-to-r from-sky-50 to-white">
+    <div className="w-full rounded-[24px] sm:rounded-[28px] bg-white border border-zinc-200 shadow-sm overflow-hidden">
+      <div className="px-4 py-5 sm:px-6 border-b border-zinc-100 bg-gradient-to-r from-sky-50 to-white">
         <p className="text-xs uppercase tracking-[0.25em] font-bold text-sky-600">{step.subtitle}</p>
-        <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mt-2">{step.title}</h2>
+        <h2 className="text-2xl md:text-3xl font-black text-zinc-900 mt-2 break-words">{step.title}</h2>
       </div>
 
-      <div className="flex-1 min-h-0 p-6 grid md:grid-cols-[1fr_0.8fr] gap-5">
-        <div className="flex flex-col min-h-0">
-          <p className="font-bold text-zinc-900 mb-3">{step.prompt}</p>
+      <div className="p-4 sm:p-6 grid gap-5 md:grid-cols-[1fr_0.8fr]">
+        <div className="flex flex-col min-h-0 min-w-0">
+          <p className="font-bold text-zinc-900 mb-3 break-words">{step.prompt}</p>
 
           <textarea
             value={text}
             onChange={(event) => setText(event.target.value)}
             placeholder="Write here in English..."
-            className="flex-1 min-h-[260px] rounded-3xl border border-zinc-200 p-5 outline-none focus:border-sky-500 resize-none text-zinc-900"
+            className="w-full min-h-[220px] sm:min-h-[260px] rounded-3xl border border-zinc-200 p-5 outline-none focus:border-sky-500 resize-none text-zinc-900"
           />
         </div>
 
-        <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-5">
-          <div className="flex items-center justify-between">
+        <div className="rounded-3xl border border-zinc-200 bg-zinc-50 p-5 min-w-0">
+          <div className="flex items-center justify-between gap-3">
             <span className="text-sm text-zinc-500">Words</span>
-            <span className="font-black text-zinc-900">{wordCount}/{step.minWords}</span>
+            <span className="font-black text-zinc-900 shrink-0">{wordCount}/{step.minWords}</span>
           </div>
 
           <div className="mt-5">
             <p className="text-sm font-semibold text-zinc-500 mb-2">Model answer</p>
-            <p className="text-zinc-700 leading-7">{step.modelAnswer}</p>
+            <p className="text-zinc-700 leading-7 break-words">{step.modelAnswer}</p>
           </div>
 
-          <button type="button" onClick={onNext} disabled={!canFinish} className={cls('mt-6 w-full rounded-2xl px-6 py-4 font-bold text-white transition-all', canFinish ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed')}>
+          <button
+            type="button"
+            onClick={onNext}
+            disabled={!canFinish}
+            className={cls(
+              'mt-6 w-full rounded-2xl px-6 py-4 font-bold text-white transition-all',
+              canFinish ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-zinc-300 cursor-not-allowed'
+            )}
+          >
             Finish day
           </button>
         </div>
@@ -886,9 +1006,9 @@ function WritingStep({ step, onNext }: { step: Extract<LessonStep, { type: 'writ
   );
 }
 
-function CelebrationStep({ step, onBackToTrail }: { step: Extract<LessonStep, { type: 'celebration' }>; onBackToTrail: () => void; }) {
+function CelebrationStep({ step, onBackToTrail }: { step: Extract<LessonStep, { type: 'celebration' }>; onBackToTrail: () => void }) {
   return (
-    <div className="h-full rounded-[28px] bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 text-white shadow-sm overflow-hidden flex items-center justify-center relative">
+    <div className="w-full rounded-[24px] sm:rounded-[28px] bg-gradient-to-br from-indigo-600 via-violet-600 to-fuchsia-600 text-white shadow-sm overflow-hidden flex items-center justify-center relative min-h-[420px] sm:min-h-[520px]">
       <div className="absolute inset-0 opacity-30">
         <div className="absolute top-10 left-10 text-white/80"><PartyPopper size={38} /></div>
         <div className="absolute top-20 right-16 text-white/80"><Sparkles size={34} /></div>
@@ -896,7 +1016,7 @@ function CelebrationStep({ step, onBackToTrail }: { step: Extract<LessonStep, { 
         <div className="absolute bottom-10 right-10 text-white/80"><PartyPopper size={42} /></div>
       </div>
 
-      <div className="max-w-2xl text-center px-8 relative">
+      <div className="max-w-2xl text-center px-5 sm:px-8 py-10 relative">
         <div className="mx-auto w-20 h-20 rounded-full bg-white/15 flex items-center justify-center mb-6">
           {step.isLevelCompletion ? <Sparkles size={34} /> : <PartyPopper size={34} />}
         </div>
@@ -904,9 +1024,9 @@ function CelebrationStep({ step, onBackToTrail }: { step: Extract<LessonStep, { 
         <p className="text-xs uppercase tracking-[0.25em] font-bold text-white/70">
           {step.isLevelCompletion ? 'Level unlocked' : 'Daily win'}
         </p>
-        <h2 className="text-4xl md:text-5xl font-black mt-3">{step.title}</h2>
-        <p className="mt-5 text-xl text-white/90">{step.message}</p>
-        <p className="mt-4 text-white/80 leading-8">{step.encouragement}</p>
+        <h2 className="text-3xl sm:text-4xl md:text-5xl font-black mt-3 break-words">{step.title}</h2>
+        <p className="mt-5 text-lg sm:text-xl text-white/90 break-words">{step.message}</p>
+        <p className="mt-4 text-white/80 leading-7 sm:leading-8 break-words">{step.encouragement}</p>
 
         <div className="mt-8 rounded-3xl bg-white/10 border border-white/15 p-5">
           <div className="inline-flex items-center gap-2 font-bold">
@@ -921,7 +1041,11 @@ function CelebrationStep({ step, onBackToTrail }: { step: Extract<LessonStep, { 
           )}
         </div>
 
-        <button type="button" onClick={onBackToTrail} className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white text-indigo-700 px-6 py-4 font-black">
+        <button
+          type="button"
+          onClick={onBackToTrail}
+          className="mt-8 inline-flex items-center gap-2 rounded-2xl bg-white text-indigo-700 px-6 py-4 font-black"
+        >
           Back to trail
           <ChevronRight size={18} />
         </button>
@@ -948,10 +1072,12 @@ function PlayerView({
 
   if (!step) {
     return (
-      <div className="h-screen bg-[#f6f7fb] p-5">
-        <div className="max-w-4xl mx-auto rounded-[28px] bg-white border border-zinc-200 shadow-sm p-8">
+      <div className="w-full min-h-full bg-[#f6f7fb] px-2 py-2 sm:px-3 sm:py-3 md:p-5">
+        <div className="max-w-4xl mx-auto rounded-[24px] sm:rounded-[28px] bg-white border border-zinc-200 shadow-sm p-6 sm:p-8">
           <h2 className="text-2xl font-black text-zinc-900">Lesson could not be opened.</h2>
-          <p className="text-zinc-500 mt-2">This usually happens when the lesson content is incomplete. The trail is still safe.</p>
+          <p className="text-zinc-500 mt-2 break-words">
+            This usually happens when the lesson content is incomplete. The trail is still safe.
+          </p>
           <button type="button" onClick={onBack} className="mt-6 rounded-2xl bg-indigo-600 text-white px-5 py-3 font-bold">
             Back to trail
           </button>
@@ -961,32 +1087,45 @@ function PlayerView({
   }
 
   return (
-    <div className="h-screen overflow-hidden bg-[#f6f7fb] p-3 md:p-5">
-      <div className="h-full max-w-6xl mx-auto flex flex-col">
-        <div className="rounded-[28px] bg-white border border-zinc-200 shadow-sm px-5 py-4 mb-4">
-          <div className="flex items-center justify-between gap-4">
-            <button type="button" onClick={stepIndex === 0 ? onBack : () => setStepIndex((prev) => Math.max(0, prev - 1))} className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 font-bold text-zinc-700 inline-flex items-center gap-2">
-              <ChevronLeft size={18} />
-              Back
-            </button>
+    <div className="w-full min-h-full bg-[#f6f7fb] px-2 py-2 sm:px-3 sm:py-3 md:p-5">
+      <div className="w-full max-w-6xl mx-auto flex flex-col gap-4">
+        <div className="rounded-[24px] sm:rounded-[28px] bg-white border border-zinc-200 shadow-sm px-4 py-4 sm:px-5 sm:py-4">
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={stepIndex === 0 ? onBack : () => setStepIndex((prev) => Math.max(0, prev - 1))}
+                className="shrink-0 rounded-2xl border border-zinc-200 bg-white px-4 py-3 font-bold text-zinc-700 inline-flex items-center gap-2"
+              >
+                <ChevronLeft size={18} />
+                Back
+              </button>
 
-            <div className="flex-1 max-w-3xl">
-              <div className="flex items-center justify-between text-sm font-bold text-zinc-500 mb-2">
-                <span>{lesson.level} · Day {lesson.day}</span>
-                <span>{progressPercent}%</span>
-              </div>
-              <div className="h-3 rounded-full bg-zinc-200 overflow-hidden">
-                <div className="h-full rounded-full bg-indigo-600 transition-all duration-300" style={{ width: `${progressPercent}%` }} />
+              <div className="hidden sm:block rounded-2xl bg-indigo-50 px-4 py-3 shrink-0">
+                <div className="text-sm font-bold text-indigo-700">One screen at a time</div>
               </div>
             </div>
 
-            <div className="rounded-2xl bg-indigo-50 px-4 py-3">
+            <div className="w-full min-w-0">
+              <div className="flex items-center justify-between gap-3 text-sm font-bold text-zinc-500 mb-2">
+                <span className="truncate">{lesson.level} · Day {lesson.day}</span>
+                <span className="shrink-0">{progressPercent}%</span>
+              </div>
+              <div className="h-3 rounded-full bg-zinc-200 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-indigo-600 transition-all duration-300"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
+
+            <div className="sm:hidden rounded-2xl bg-indigo-50 px-4 py-3">
               <div className="text-sm font-bold text-indigo-700">One screen at a time</div>
             </div>
           </div>
         </div>
 
-        <div className="flex-1 min-h-0">
+        <div className="w-full min-w-0">
           {step.type === 'grammar' && <GrammarStep step={step} onNext={() => setStepIndex((prev) => prev + 1)} />}
           {step.type === 'reading' && <ReadingStep step={step} onNext={() => setStepIndex((prev) => prev + 1)} />}
           {step.type === 'listening' && <ListeningStep step={step} onNext={() => setStepIndex((prev) => prev + 1)} />}
@@ -1025,10 +1164,7 @@ export default function Learn() {
             .select('id, level, day, title, description, grammar_content, vocabulary, reading_prompt, writing_prompt')
             .eq('level', profile.level)
             .order('day', { ascending: true }),
-          supabase
-            .from('progress')
-            .select('lesson_id')
-            .eq('user_id', profile.id),
+          supabase.from('progress').select('lesson_id').eq('user_id', profile.id),
         ]);
 
         if (lessonsError) throw lessonsError;
@@ -1115,10 +1251,7 @@ export default function Learn() {
         profileUpdate.level = options.unlockLevel;
       }
 
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update(profileUpdate)
-        .eq('id', profile.id);
+      const { error: profileError } = await supabase.from('profiles').update(profileUpdate).eq('id', profile.id);
 
       if (profileError) throw profileError;
 
@@ -1151,8 +1284,8 @@ export default function Learn() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f6f7fb] p-5">
-        <div className="max-w-5xl mx-auto rounded-[28px] bg-white border border-zinc-200 shadow-sm p-8 text-zinc-500 font-medium">
+      <div className="w-full min-h-full bg-[#f6f7fb] px-2 py-2 sm:px-3 sm:py-3 md:p-5">
+        <div className="max-w-5xl mx-auto rounded-[24px] sm:rounded-[28px] bg-white border border-zinc-200 shadow-sm p-6 sm:p-8 text-zinc-500 font-medium">
           Loading trail...
         </div>
       </div>
@@ -1160,15 +1293,21 @@ export default function Learn() {
   }
 
   return (
-    <div className="relative">
+    <div className="relative w-full min-w-0">
       {openingDay && (
-        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[1px] flex items-center justify-center">
-          <div className="rounded-3xl bg-white border border-zinc-200 shadow-sm px-6 py-5 font-bold text-zinc-800">
+        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[1px] flex items-center justify-center px-4">
+          <div className="rounded-3xl bg-white border border-zinc-200 shadow-sm px-6 py-5 font-bold text-zinc-800 text-center">
             Opening day...
           </div>
         </div>
       )}
-      <RoadmapView days={days} completedDays={completedDays} currentLevel={profile?.level || 'A1'} onOpenDay={openDay} />
+
+      <RoadmapView
+        days={days}
+        completedDays={completedDays}
+        currentLevel={profile?.level || 'A1'}
+        onOpenDay={openDay}
+      />
     </div>
   );
 }
