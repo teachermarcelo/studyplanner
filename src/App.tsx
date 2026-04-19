@@ -51,13 +51,22 @@ function Sidebar() {
 
   return (
     <>
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-zinc-200 flex items-center justify-between px-4 z-50">
-        <h1 className="font-bold text-xl text-indigo-600">Fluent Immersion</h1>
-        <button onClick={() => setIsOpen(!isOpen)} className="p-2 text-zinc-600">
+      {/* Mobile top bar */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-zinc-200 flex items-center justify-between px-4 z-40">
+        <h1 className="font-bold text-lg sm:text-xl text-indigo-600 truncate">
+          Fluent Immersion
+        </h1>
+
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="p-2 text-zinc-600 shrink-0"
+          aria-label={isOpen ? 'Fechar menu' : 'Abrir menu'}
+        >
           {isOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
+      {/* Mobile overlay */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -70,63 +79,74 @@ function Sidebar() {
         )}
       </AnimatePresence>
 
+      {/* Sidebar */}
       <motion.aside
         className={cn(
-          "fixed top-0 bottom-0 left-0 w-[240px] bg-white border-r border-[color:var(--border)] z-50 transform lg:translate-x-0 transition-transform duration-300 ease-in-out",
-          !isOpen && "-translate-x-full"
+          "fixed top-0 bottom-0 left-0 w-64 max-w-[85vw] bg-white border-r border-[color:var(--border)] z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
-        <div className="p-6">
-          <h1 className="font-extrabold text-[20px] text-[color:var(--accent-primary)] hidden lg:block mb-10 flex items-center gap-2">
-            FluentImmersion
-          </h1>
+        <div className="h-full flex flex-col">
+          <div className="p-6 overflow-y-auto">
+            <h1 className="hidden lg:flex font-extrabold text-[20px] text-[color:var(--accent-primary)] mb-10 items-center gap-2">
+              FluentImmersion
+            </h1>
 
-          <nav className="space-y-1">
-            {navItems.map((item) => (
-              <Link
-                key={item.path}
-                to={item.path}
-                onClick={() => setIsOpen(false)}
-                className={cn(
-                  "flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors text-sm",
-                  location.pathname === item.path
-                    ? "bg-[#EEF2FF] text-[color:var(--accent-primary)]"
-                    : "text-[color:var(--text-muted)] hover:bg-zinc-50"
-                )}
-              >
-                <item.icon size={18} />
-                {item.label}
-              </Link>
-            ))}
-          </nav>
-        </div>
-
-        <div className="absolute bottom-0 left-0 right-0 p-6 border-t border-[color:var(--border)]">
-          <div className="flex items-center gap-3 mb-6 p-2">
-            <div className="w-10 h-10 rounded-full bg-zinc-200 shrink-0 overflow-hidden">
-              {profile?.avatar_url ? (
-                <img src={profile.avatar_url} referrerPolicy="no-referrer" className="w-full h-full object-cover" />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center font-bold text-zinc-500 uppercase">
-                  {profile?.full_name?.charAt(0) || '?'}
-                </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-bold text-[14px] truncate">{profile?.full_name || 'Learning'}</p>
-              <p className="text-[11px] text-[color:var(--text-muted)] truncate">
-                {profile?.level} · {profile?.xp} XP
-              </p>
-            </div>
+            <nav className="space-y-1">
+              {navItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setIsOpen(false)}
+                  className={cn(
+                    "flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-colors text-sm min-w-0",
+                    location.pathname === item.path
+                      ? "bg-[#EEF2FF] text-[color:var(--accent-primary)]"
+                      : "text-[color:var(--text-muted)] hover:bg-zinc-50"
+                  )}
+                >
+                  <item.icon size={18} className="shrink-0" />
+                  <span className="truncate">{item.label}</span>
+                </Link>
+              ))}
+            </nav>
           </div>
 
-          <button
-            onClick={() => signOut()}
-            className="flex items-center gap-3 w-full px-4 py-2 text-[color:var(--text-muted)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider"
-          >
-            <LogOut size={16} />
-            Sign Out
-          </button>
+          <div className="mt-auto p-6 border-t border-[color:var(--border)]">
+            <div className="flex items-center gap-3 mb-6 p-2 min-w-0">
+              <div className="w-10 h-10 rounded-full bg-zinc-200 shrink-0 overflow-hidden">
+                {profile?.avatar_url ? (
+                  <img
+                    src={profile.avatar_url}
+                    referrerPolicy="no-referrer"
+                    className="w-full h-full object-cover"
+                    alt={profile?.full_name || 'Avatar do usuário'}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center font-bold text-zinc-500 uppercase">
+                    {profile?.full_name?.charAt(0) || '?'}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex-1 min-w-0">
+                <p className="font-bold text-[14px] truncate">
+                  {profile?.full_name || 'Learning'}
+                </p>
+                <p className="text-[11px] text-[color:var(--text-muted)] truncate">
+                  {profile?.level} · {profile?.xp} XP
+                </p>
+              </div>
+            </div>
+
+            <button
+              onClick={() => signOut()}
+              className="flex items-center gap-3 w-full px-4 py-2 text-[color:var(--text-muted)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors text-xs font-bold uppercase tracking-wider"
+            >
+              <LogOut size={16} className="shrink-0" />
+              <span className="truncate">Sign Out</span>
+            </button>
+          </div>
         </div>
       </motion.aside>
     </>
@@ -171,19 +191,22 @@ export default function App() {
             path="/*"
             element={
               <PrivateRoute>
-                <div className="flex min-h-screen">
+                <div className="flex min-h-screen w-full overflow-x-hidden">
                   <Sidebar />
-                  <main className="flex-1 lg:ml-64 pt-16 lg:pt-0 p-4 lg:p-8 max-w-7xl mx-auto">
-                    <Routes>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/learn" element={<Learn />} />
-                      <Route path="/review" element={<Review />} />
-                      <Route path="/practice" element={<Practice />} />
-                      <Route path="/speaking" element={<Speaking />} />
-                      <Route path="/leaderboard" element={<Leaderboard />} />
-                      <Route path="/admin" element={<AdminDashboard />} />
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
+
+                  <main className="flex-1 min-w-0 w-full lg:ml-64 pt-20 lg:pt-0 px-4 py-4 sm:px-6 lg:px-8 lg:py-8">
+                    <div className="w-full max-w-7xl mx-auto min-w-0">
+                      <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/learn" element={<Learn />} />
+                        <Route path="/review" element={<Review />} />
+                        <Route path="/practice" element={<Practice />} />
+                        <Route path="/speaking" element={<Speaking />} />
+                        <Route path="/leaderboard" element={<Leaderboard />} />
+                        <Route path="/admin" element={<AdminDashboard />} />
+                        <Route path="*" element={<Navigate to="/" replace />} />
+                      </Routes>
+                    </div>
                   </main>
                 </div>
               </PrivateRoute>
